@@ -48,6 +48,26 @@ describe("CafeDetailPage", () => {
     );
   });
 
+  it("answers the four practical questions for MATCHA MATCHA", () => {
+    const matcha = cafe("matcha-matcha-church-street");
+    render(<CafeDetailPage cafe={matcha} />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "MATCHA MATCHA" })).toBeInTheDocument();
+    expect(screen.getByText("Meet me at 407 Church Street.")).toBeInTheDocument();
+    for (const heading of [
+      "Why meet here?",
+      "What should we order or notice?",
+      "How was this entry checked?",
+      "What else is nearby?",
+    ]) {
+      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("link", { name: /directions to matcha matcha/i })).toHaveAttribute(
+      "href",
+      matcha.mapsUrl,
+    );
+  });
+
   it("states that an explicitly sourced branch was verified as the exact branch", () => {
     render(<CafeDetailPage cafe={cafe("misc-coffee-ossington")} />);
 
@@ -96,22 +116,6 @@ describe("CafeDetailPage", () => {
 
     expect(boundary).toHaveAttribute("id", "community-reactions");
     expect(boundary).toHaveAttribute("aria-labelledby", "community-reactions-title");
-  });
-
-  it("stacks section labels with their headings instead of hanging them beside the heading", () => {
-    render(<CafeDetailPage cafe={cafe("larrys-place-parkdale")} />);
-
-    for (const [label, heading] of [
-      ["01", "Plan the visit"],
-      ["02", "What it feels like"],
-      ["03", "How this entry was checked"],
-      ["04", "Nearby alternatives"],
-      ["05", "How did this place feel?"],
-    ] as const) {
-      expect(screen.getByText(label).parentElement).toBe(
-        screen.getByRole("heading", { name: heading }).parentElement,
-      );
-    }
   });
 
   it("renders the live reaction bar by café slug at the existing boundary", async () => {

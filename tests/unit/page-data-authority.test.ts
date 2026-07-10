@@ -35,4 +35,28 @@ describe("user-page catalogue authority", () => {
     expect(absentDetail).toMatchObject({ cafe: null, nearby: [], source: "d1" });
     expect(roulette).toMatchObject({ cafe: onlyCafe, source: "d1" });
   });
+
+  it("passes the verified MATCHA MATCHA record through without adding venue claims", async () => {
+    const matcha = cafes.find((cafe) => cafe.slug === "matcha-matcha-church-street")!;
+    const repository: CatalogueRepository = {
+      async list() {
+        return [matcha];
+      },
+      async findBySlug() {
+        throw new Error("Detail must use the authoritative catalogue snapshot.");
+      },
+    };
+
+    const detail = await prepareCafeDetailData(new CatalogueService(repository), matcha.slug);
+
+    expect(detail.cafe).toBe(matcha);
+    expect(detail.cafe).toMatchObject({
+      address: "407 Church St, Toronto, ON",
+      recommendation:
+        "A dedicated matcha stop with a deeper tea-focused menu than general cafés.",
+      moods: ["modern", "bright", "focused"],
+      offerings: ["matcha", "hojicha", "soft-serve", "bakery"],
+    });
+    expect(detail.nearby).toEqual([]);
+  });
 });
