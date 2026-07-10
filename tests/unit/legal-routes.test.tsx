@@ -15,6 +15,17 @@ describe("legal and recovery routes", () => {
       screen.getByRole("heading", { level: 1, name: "Privacy, in plain language." }),
     ).toBeInTheDocument();
     expect(screen.getByText(/signed anonymous visitor cookie/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/visitor identity is hashed using a secret held only on the server/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/reactions and café suggestions are stored/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/cloudflare turnstile/i)).toBeInTheDocument();
+    expect(screen.getByText(/no user accounts or profiles/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Meet Me There on GitHub" }),
+    ).toHaveAttribute("href", "https://github.com/adukhan98/cafeweather");
   });
 
   it("sets expectations for guide information", () => {
@@ -24,13 +35,31 @@ describe("legal and recovery routes", () => {
       screen.getByRole("heading", { level: 1, name: "A guide, not a guarantee." }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/verify hours and accessibility directly/i),
+      screen.getByText(/listings are editorial and verified branch by branch/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /cannot guarantee real-time hours, accessibility, pricing, menus, or availability/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/verify hours and accessibility directly with the venue/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/directions open in external services/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/community suggestions are moderated before they appear/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /use the guide respectfully.*abusive, misleading, or unlawful material.*disrupt the service/is,
+      ),
     ).toBeInTheDocument();
   });
 
   it("offers useful recovery paths", () => {
     render(<NotFound />);
 
+    expect(screen.getByText("We lost the note, not the whole city.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Browse every place" })).toHaveAttribute(
       "href",
       "/cafes",

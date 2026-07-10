@@ -30,7 +30,7 @@ export default function Privacy() {
           There are no user accounts or profiles. For questions, use the
           repository as the contact path: {" "}
           <a href="https://github.com/adukhan98/cafeweather">
-            Café Weather on GitHub
+            {brand.name} on GitHub
           </a>
           .
         </p>
