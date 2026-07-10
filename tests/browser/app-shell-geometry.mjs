@@ -27,7 +27,7 @@ export async function assertAppShellGeometry(page, width, height = 800) {
         style.opacity !== "0" &&
         rect.width > 0 &&
         rect.height > 0;
-      const meetsTarget = rect.width >= 43.5 && rect.height >= 43.5;
+      const meetsTarget = rect.width >= 44 && rect.height >= 44;
       if (!visible || meetsTarget) return [];
       return [{
         label: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? element.tagName,

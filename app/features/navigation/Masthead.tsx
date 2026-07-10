@@ -54,12 +54,10 @@ export function Masthead() {
       }
       if (event.key !== "Tab") return;
 
-      const links = Array.from(
-        mobileNavRef.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [],
-      );
-      const controls = [toggleRef.current, ...links].filter(
-        (control): control is HTMLAnchorElement | HTMLButtonElement =>
-          control !== null,
+      const controls = Array.from(
+        mobileNavRef.current?.querySelectorAll<HTMLAnchorElement | HTMLButtonElement>(
+          "button, a[href]",
+        ) ?? [],
       );
       const first = controls[0];
       const last = controls.at(-1);
@@ -136,7 +134,9 @@ export function Masthead() {
             type="button"
             aria-controls="mobile-navigation"
             aria-expanded={menuOpen}
+            aria-hidden={menuOpen ? "true" : undefined}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
+            tabIndex={menuOpen ? -1 : undefined}
             onClick={toggleMenu}
           >
             <span aria-hidden="true" />
@@ -157,6 +157,15 @@ export function Masthead() {
         hidden={!menuOpen}
         data-state={menuOpen ? "open" : "closed"}
       >
+        <button
+          className="masthead__mobile-close"
+          type="button"
+          aria-label="Close menu"
+          onClick={() => closeMenu("toggle")}
+        >
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+        </button>
         <nav aria-label="Mobile" data-state={menuOpen ? "open" : "closed"}>
           <ul>
             {destinations.map((destination, index) => (

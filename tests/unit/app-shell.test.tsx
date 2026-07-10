@@ -157,18 +157,29 @@ describe("AppShell", () => {
 
     await user.click(toggle);
     const mobile = screen.getByRole("navigation", { name: "Mobile" });
+    const dialog = screen.getByRole("dialog", { name: "Mobile menu" });
+    const close = within(dialog).getByRole("button", { name: "Close menu" });
     const browse = within(mobile).getByRole("link", { name: "Browse" });
     const suggest = within(mobile).getByRole("link", { name: "Suggest" });
     expect(browse).toHaveFocus();
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
 
     await user.tab({ shift: true });
-    expect(toggle).toHaveFocus();
+    expect(close).toHaveFocus();
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
     await user.tab({ shift: true });
     expect(suggest).toHaveFocus();
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
     await user.tab();
-    expect(toggle).toHaveFocus();
+    expect(close).toHaveFocus();
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
     await user.tab();
     expect(browse).toHaveFocus();
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+
+    await user.click(close);
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAccessibleName("Open menu");
   });
 
   it("closes mobile navigation and moves focus to main after link activation", async () => {
