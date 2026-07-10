@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cafes } from "../../app/data/cafes";
+import verifiedResearch from "../../research/cafes-verified.json";
 
 describe("verified launch cafe catalogue", () => {
   it("contains exactly 36 cafes with unique stable ids and slugs", () => {
@@ -40,6 +41,48 @@ describe("verified launch cafe catalogue", () => {
       verifiedAt: "2026-07-09",
       verificationStatus: "verified",
     });
+  });
+
+  it("qualifies expanded and inferred branches as branch-unspecified", () => {
+    const qualified = cafes.filter(
+      ({ branchSpecificity }) => branchSpecificity !== "explicit",
+    );
+    const explicit = cafes.filter(
+      ({ branchSpecificity }) => branchSpecificity === "explicit",
+    );
+
+    expect(qualified).toHaveLength(6);
+    expect(
+      qualified.every(
+        ({ verificationStatus }) =>
+          verificationStatus === "branch-unspecified",
+      ),
+    ).toBe(true);
+    expect(
+      explicit.every(
+        ({ verificationStatus }) => verificationStatus === "verified",
+      ),
+    ).toBe(true);
+  });
+
+  it("preserves address and coordinate verification provenance for every cafe", () => {
+    expect(
+      cafes.map(
+        ({ slug, addressVerified, coordinateConfidence }) => ({
+          slug,
+          addressVerified,
+          coordinateConfidence,
+        }),
+      ),
+    ).toEqual(
+      verifiedResearch.records.map(
+        ({ slug, addressVerified, coordinateConfidence }) => ({
+          slug,
+          addressVerified,
+          coordinateConfidence,
+        }),
+      ),
+    );
   });
 
   it("provides honest HTTPS directions searches without invented venue metadata", () => {

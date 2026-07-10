@@ -4,7 +4,9 @@ export type CafeBranchSpecificity =
   | "inferred-toronto-scope"
   | "inferred-from-named-sibling";
 
-export type CafeVerificationStatus = "verified";
+export type CafeVerificationStatus = "verified" | "branch-unspecified";
+
+export type CafeCoordinateConfidence = "poi" | "address";
 
 export type Cafe = Readonly<{
   id: string;
@@ -12,9 +14,11 @@ export type Cafe = Readonly<{
   name: string;
   branch: string | null;
   address: string;
+  addressVerified: boolean;
   neighborhood: string;
   lat: number;
   lng: number;
+  coordinateConfidence: CafeCoordinateConfidence;
   branchSpecificity: CafeBranchSpecificity;
   verificationStatus: CafeVerificationStatus;
   moods: readonly string[];
