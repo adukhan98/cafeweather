@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CoffeeBean, MapTrifold, Rows } from "@phosphor-icons/react";
 import { useSearchParams } from "react-router";
 
@@ -15,6 +15,22 @@ import {
 import { formatFacet, getDiscoveryFacets } from "./facets";
 
 type FacetKey = "moods" | "neighborhoods" | "offerings";
+type CommitMode = "push" | "debounced-replace";
+type ActiveFilter = Readonly<{
+  key: string;
+  label: string;
+  aria: string;
+  facet?: FacetKey;
+  value?: string;
+}>;
+
+const emptyDiscoveryState: DiscoveryState = {
+  search: "",
+  moods: [],
+  neighborhoods: [],
+  offerings: [],
+  view: "list",
+};
 
 function toggleValue(values: readonly string[], value: string): string[] {
   return values.includes(value)
@@ -60,66 +76,150 @@ function FacetDisclosure({
 
 export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const state = useMemo(() => parseDiscoveryParams(searchParams), [searchParams]);
-  const [searchDraft, setSearchDraft] = useState(state.search);
-  const committedSearchRef = useRef(state.search);
+  const routeKey = searchParams.toString();
+  const initialStateRef = useRef(parseDiscoveryParams(searchParams));
+  const [state, setState] = useState<DiscoveryState>(initialStateRef.current);
+  const canonicalStateRef = useRef<DiscoveryState>(initialStateRef.current);
+  const searchTimerRef = useRef<number | null>(null);
+  const pendingRoutesRef = useRef(new Set<string>());
+  const latestPendingRouteRef = useRef<string | null>(null);
+  const routeKeyRef = useRef(routeKey);
+  routeKeyRef.current = routeKey;
   const facets = useMemo(() => getDiscoveryFacets(cafes), [cafes]);
   const results = useMemo(
-    () =>
-      filterCafes(
-        cafes,
-        stateToFilters({
-          ...state,
-          search: searchDraft,
-        }),
-      ),
-    [cafes, searchDraft, state],
+    () => filterCafes(cafes, stateToFilters(state)),
+    [cafes, state],
   );
 
   useEffect(() => {
-    if (state.search === committedSearchRef.current) return;
-    committedSearchRef.current = state.search;
-    setSearchDraft(state.search);
-  }, [state.search]);
+    if (pendingRoutesRef.current.has(routeKey)) {
+      if (latestPendingRouteRef.current === routeKey) {
+        pendingRoutesRef.current.clear();
+        latestPendingRouteRef.current = null;
+      } else {
+        pendingRoutesRef.current.delete(routeKey);
+      }
+      return;
+    }
 
-  useEffect(() => {
-    if (searchDraft === state.search) return;
+    pendingRoutesRef.current.clear();
+    latestPendingRouteRef.current = null;
+    const routeState = parseDiscoveryParams(new URLSearchParams(routeKey));
+    if (
+      serializeDiscoveryParams(canonicalStateRef.current).toString() ===
+      serializeDiscoveryParams(routeState).toString()
+    ) {
+      return;
+    }
 
-    const timeout = window.setTimeout(() => {
-      committedSearchRef.current = searchDraft;
-      setSearchParams(
-        (currentParams) =>
-          serializeDiscoveryParams({
-            ...parseDiscoveryParams(currentParams),
-            search: searchDraft,
-          }),
-        { replace: true },
-      );
-    }, 180);
+    if (searchTimerRef.current !== null) {
+      window.clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    canonicalStateRef.current = routeState;
+    setState(routeState);
+  }, [routeKey]);
 
-    return () => window.clearTimeout(timeout);
-  }, [searchDraft, setSearchParams, state.search]);
+  useEffect(
+    () => () => {
+      if (searchTimerRef.current !== null) {
+        window.clearTimeout(searchTimerRef.current);
+      }
+    },
+    [],
+  );
 
-  const update = (patch: Partial<DiscoveryState>) => {
-    setSearchParams(
-      (currentParams) =>
-        serializeDiscoveryParams({
-          ...parseDiscoveryParams(currentParams),
-          ...patch,
-        }),
-      { replace: true },
+  const navigateToState = useCallback(
+    (next: DiscoveryState, replace: boolean) => {
+      const params = serializeDiscoveryParams(next);
+      const nextRouteKey = params.toString();
+      if (nextRouteKey !== routeKeyRef.current) {
+        pendingRoutesRef.current.add(nextRouteKey);
+        latestPendingRouteRef.current = nextRouteKey;
+      }
+      setSearchParams(params, { replace });
+    },
+    [setSearchParams],
+  );
+
+  const commit = useCallback(
+    (
+      change:
+        | Partial<DiscoveryState>
+        | ((current: DiscoveryState) => DiscoveryState),
+      mode: CommitMode,
+    ) => {
+      const current = canonicalStateRef.current;
+      const next =
+        typeof change === "function" ? change(current) : { ...current, ...change };
+
+      canonicalStateRef.current = next;
+      setState(next);
+
+      if (searchTimerRef.current !== null) {
+        window.clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = null;
+      }
+
+      if (mode === "debounced-replace") {
+        searchTimerRef.current = window.setTimeout(() => {
+          searchTimerRef.current = null;
+          navigateToState(canonicalStateRef.current, true);
+        }, 180);
+        return;
+      }
+
+      navigateToState(next, false);
+    },
+    [navigateToState],
+  );
+
+  const toggleFacet = (facet: FacetKey, value: string) => {
+    commit(
+      (current) => ({
+        ...current,
+        [facet]: toggleValue(current[facet], value),
+      }),
+      "push",
     );
   };
 
-  const toggleFacet = (facet: FacetKey, value: string) => {
-    update({ [facet]: toggleValue(state[facet], value) });
+  const reset = () => {
+    commit(emptyDiscoveryState, "push");
   };
 
-  const reset = () => {
-    committedSearchRef.current = "";
-    setSearchDraft("");
-    setSearchParams(new URLSearchParams(), { replace: true });
-  };
+  const activeFilters: ActiveFilter[] = [
+    ...(state.search
+      ? [
+          {
+            key: "search",
+            label: `Search: ${state.search}`,
+            aria: `Clear search filter ${state.search}`,
+          },
+        ]
+      : []),
+    ...state.moods.map((value) => ({
+      key: `mood-${value}`,
+      label: formatFacet(value),
+      aria: `Clear mood filter ${formatFacet(value)}`,
+      facet: "moods" as const,
+      value,
+    })),
+    ...state.neighborhoods.map((value) => ({
+      key: `neighborhood-${value}`,
+      label: formatFacet(value),
+      aria: `Clear neighbourhood filter ${formatFacet(value)}`,
+      facet: "neighborhoods" as const,
+      value,
+    })),
+    ...state.offerings.map((value) => ({
+      key: `offering-${value}`,
+      label: formatFacet(value),
+      aria: `Clear offering filter ${formatFacet(value)}`,
+      facet: "offerings" as const,
+      value,
+    })),
+  ];
 
   return (
     <div className="catalogue-page">
@@ -137,9 +237,9 @@ export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
           <input
             id="cafe-search"
             type="search"
-            value={searchDraft}
+            value={state.search}
             onChange={(event) => {
-              setSearchDraft(event.currentTarget.value);
+              commit({ search: event.currentTarget.value }, "debounced-replace");
             }}
             placeholder="Name, area, or recommendation"
           />
@@ -167,6 +267,42 @@ export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
           />
         </div>
 
+        <section className="active-filters" aria-label="Active filters">
+          <div className="active-filters__head">
+            <h2>Active filters</h2>
+            <p>
+              {activeFilters.length === 0
+                ? "None selected"
+                : `${activeFilters.length} active`}
+            </p>
+          </div>
+          {activeFilters.length > 0 ? (
+            <ul>
+              {activeFilters.map((filter) => (
+                <li key={filter.key}>
+                  <span>{filter.label}</span>
+                  <button
+                    type="button"
+                    aria-label={filter.aria}
+                    onClick={() => {
+                      if (filter.key === "search") {
+                        commit({ search: "" }, "push");
+                      } else if (filter.facet && filter.value) {
+                        toggleFacet(filter.facet, filter.value);
+                      }
+                    }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="active-filters__note">
+            Practical filters aren’t shown yet because the verified records don’t contain them.
+          </p>
+        </section>
+
         <div className="catalogue-controls__footer">
           <p role="status" aria-live="polite">
             {results.length === 1 ? "1 café" : `${results.length} cafés`}
@@ -178,7 +314,7 @@ export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
                 type="radio"
                 name="catalogue-view"
                 checked={state.view === "list"}
-                onChange={() => update({ view: "list" })}
+                onChange={() => commit({ view: "list" }, "push")}
               />
               <Rows size={18} weight="regular" aria-hidden="true" />
               <span>List view</span>
@@ -188,7 +324,7 @@ export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
                 type="radio"
                 name="catalogue-view"
                 checked={state.view === "map"}
-                onChange={() => update({ view: "map" })}
+                onChange={() => commit({ view: "map" }, "push")}
               />
               <MapTrifold size={18} weight="regular" aria-hidden="true" />
               <span>Map view</span>

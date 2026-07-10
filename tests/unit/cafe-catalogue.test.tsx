@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, useLocation } from "react-router";
-import { describe, expect, it } from "vitest";
+import { MemoryRouter, useLocation, useNavigate } from "react-router";
+import { describe, expect, it, vi } from "vitest";
 
 import { cafes } from "../../app/data/cafes";
 import { CafeCatalogue } from "../../app/features/discovery/CafeCatalogue";
@@ -13,11 +13,22 @@ function LocationProbe() {
   return <div aria-label="Current URL">{location.pathname + location.search}</div>;
 }
 
+function HistoryControls() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate(-1)}>History back</button>
+      <button type="button" onClick={() => navigate(1)}>History forward</button>
+    </>
+  );
+}
+
 function renderCatalogue(initialEntry = "/cafes") {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <CafeCatalogue cafes={cafes} />
       <LocationProbe />
+      <HistoryControls />
     </MemoryRouter>,
   );
 }
@@ -66,6 +77,48 @@ describe("CafeCatalogue", () => {
     );
   });
 
+  it("preserves search when a facet commits before the search timer", () => {
+    vi.useFakeTimers();
+    try {
+      renderCatalogue();
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search cafés" }), {
+        target: { value: "Bloom" },
+      });
+      fireEvent.click(screen.getByLabelText("Moods filters"));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Study friendly" }));
+
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+        "/cafes?q=Bloom&mood=study-friendly",
+      );
+      act(() => vi.advanceTimersByTime(250));
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+        "/cafes?q=Bloom&mood=study-friendly",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("preserves search when the search timer commits before a facet", () => {
+    vi.useFakeTimers();
+    try {
+      renderCatalogue();
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search cafés" }), {
+        target: { value: "Bloom" },
+      });
+      act(() => vi.advanceTimersByTime(250));
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes?q=Bloom");
+
+      fireEvent.click(screen.getByLabelText("Moods filters"));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Study friendly" }));
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+        "/cafes?q=Bloom&mood=study-friendly",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("applies OR within a facet and AND across facets", async () => {
     const user = userEvent.setup();
     renderCatalogue();
@@ -96,6 +149,62 @@ describe("CafeCatalogue", () => {
       within(screen.getByRole("region", { name: "Toronto café map" })).getByRole("list", {
         name: "Cafés on this map",
       }),
+    ).toBeInTheDocument();
+  });
+
+  it("pushes deliberate filter and view changes so history restores combinations", async () => {
+    const user = userEvent.setup();
+    renderCatalogue();
+
+    await user.click(screen.getByLabelText("Moods filters"));
+    await user.click(screen.getByRole("checkbox", { name: "Coffee nerd" }));
+    await user.click(screen.getByRole("radio", { name: "Map view" }));
+    expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+      "/cafes?mood=coffee-nerd&view=map",
+    );
+
+    await user.click(screen.getByRole("button", { name: "History back" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+        "/cafes?mood=coffee-nerd",
+      ),
+    );
+    expect(screen.getByRole("radio", { name: "List view" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "History back" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "History forward" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+        "/cafes?mood=coffee-nerd",
+      ),
+    );
+  });
+
+  it("shows active filters and clears one without dropping the others", async () => {
+    const user = userEvent.setup();
+    renderCatalogue("/cafes?q=Misc&mood=coffee-nerd");
+
+    const summary = screen.getByRole("region", { name: "Active filters" });
+    expect(within(summary).getByText("Search: Misc")).toBeInTheDocument();
+    expect(within(summary).getByText("Coffee nerd")).toBeInTheDocument();
+
+    await user.click(
+      within(summary).getByRole("button", { name: "Clear mood filter Coffee nerd" }),
+    );
+    expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes?q=Misc");
+    expect(within(summary).getByText("Search: Misc")).toBeInTheDocument();
+  });
+
+  it("explains why practical attribute filters are not shown", () => {
+    renderCatalogue();
+    expect(
+      screen.getByText(
+        "Practical filters aren’t shown yet because the verified records don’t contain them.",
+      ),
     ).toBeInTheDocument();
   });
 

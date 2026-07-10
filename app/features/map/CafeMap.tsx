@@ -74,6 +74,12 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
                 </span>
               </button>
               <a
+                href={`/cafes/${cafe.slug}`}
+                aria-label={`View ${cafe.name}`}
+              >
+                View café
+              </a>
+              <a
                 href={cafe.mapsUrl}
                 target="_blank"
                 rel="noreferrer"

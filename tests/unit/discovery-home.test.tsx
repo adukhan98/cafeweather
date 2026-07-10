@@ -3,7 +3,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../app/features/map/CafeMap.client", () => ({
@@ -17,8 +17,14 @@ function renderHome() {
   return render(
     <MemoryRouter>
       <DiscoveryHome cafes={cafes} />
+      <LocationProbe />
     </MemoryRouter>,
   );
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <div aria-label="Current URL">{location.pathname + location.search}</div>;
 }
 
 describe("DiscoveryHome", () => {
@@ -50,12 +56,41 @@ describe("DiscoveryHome", () => {
     expect(roulette).toHaveAttribute("href", "/roulette?mood=coffee-nerd");
   });
 
+  it("models matcha as an offering and links to real matches", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    await user.click(screen.getByRole("radio", { name: "Matcha and pastries" }));
+
+    const browse = screen.getByRole("link", { name: /browse .* matcha and pastries/i });
+    const roulette = screen.getByRole("link", { name: /roulette .* matcha and pastries/i });
+    expect(browse).toHaveAttribute("href", "/cafes?offering=matcha");
+    expect(roulette).toHaveAttribute("href", "/roulette?offering=matcha");
+    expect(browse).not.toHaveAccessibleName(/browse 0 cafés/i);
+  });
+
+  it("submits the compact search to the catalogue from the keyboard", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    const search = screen.getByRole("searchbox", { name: "Find a café" });
+    await user.type(search, "Misc Coffee{Enter}");
+
+    expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+      "/cafes?q=Misc+Coffee",
+    );
+  });
+
   it("keeps a semantic café index available alongside the map", () => {
     renderHome();
 
     const map = screen.getByRole("region", { name: "Toronto café map" });
     const index = within(map).getByRole("list", { name: "Cafés on this map" });
     expect(within(index).getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(within(index).getByRole("link", { name: "View Larry's Place" })).toHaveAttribute(
+      "href",
+      "/cafes/larrys-place-parkdale",
+    );
     expect(within(index).getAllByRole("link", { name: /directions/i })[0]).toHaveAttribute(
       "target",
       "_blank",

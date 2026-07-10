@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, FormEvent } from "react";
 import { useMemo, useState } from "react";
 import {
   Armchair,
@@ -7,31 +7,72 @@ import {
   Heart,
   Leaf,
   MapTrifold,
+  MagnifyingGlass,
   Moon,
   Shuffle,
   UsersThree,
   type IconProps,
 } from "@phosphor-icons/react";
+import { useInRouterContext, useNavigate } from "react-router";
 
 import type { Cafe } from "../../contracts/cafes";
+import type { CafeFilters } from "../../contracts/filters";
 import { filterCafes } from "../../domain/filter-cafes";
 import { CafeRow } from "../cafes/CafeRow";
 import { CafeMap } from "../map/CafeMap";
 import { getDiscoveryFacets } from "./facets";
 
-type MoodOption = Readonly<{
+type OccasionOption = Readonly<{
+  id: string;
   label: string;
-  value: string;
+  filters: CafeFilters;
+  query: Readonly<Record<string, string>>;
   Icon: ComponentType<IconProps>;
 }>;
 
-const moodOptions: readonly MoodOption[] = [
-  { label: "Quiet work", value: "study-friendly", Icon: Armchair },
-  { label: "First date", value: "cozy", Icon: Heart },
-  { label: "Catch up", value: "community", Icon: UsersThree },
-  { label: "Serious coffee", value: "coffee-nerd", Icon: CoffeeBean },
-  { label: "Matcha and pastries", value: "matcha", Icon: Leaf },
-  { label: "Open late", value: "late-night", Icon: Moon },
+const occasionOptions: readonly OccasionOption[] = [
+  {
+    id: "quiet-work",
+    label: "Quiet work",
+    filters: { moods: ["study-friendly"] },
+    query: { mood: "study-friendly" },
+    Icon: Armchair,
+  },
+  {
+    id: "first-date",
+    label: "First date",
+    filters: { moods: ["cozy"] },
+    query: { mood: "cozy" },
+    Icon: Heart,
+  },
+  {
+    id: "catch-up",
+    label: "Catch up",
+    filters: { moods: ["community"] },
+    query: { mood: "community" },
+    Icon: UsersThree,
+  },
+  {
+    id: "serious-coffee",
+    label: "Serious coffee",
+    filters: { moods: ["coffee-nerd"] },
+    query: { mood: "coffee-nerd" },
+    Icon: CoffeeBean,
+  },
+  {
+    id: "matcha-pastries",
+    label: "Matcha and pastries",
+    filters: { offerings: ["matcha"] },
+    query: { offering: "matcha" },
+    Icon: Leaf,
+  },
+  {
+    id: "open-late",
+    label: "Open late",
+    filters: { moods: ["late-night"] },
+    query: { mood: "late-night" },
+    Icon: Moon,
+  },
 ] as const;
 
 const quietIds = [
@@ -84,13 +125,73 @@ function CollectionRail({
   );
 }
 
-export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
-  const [mood, setMood] = useState(moodOptions[0].value);
-  const selectedMood = moodOptions.find((option) => option.value === mood)!;
-  const matchingCafes = useMemo(
-    () => filterCafes(cafes, { moods: [mood] }),
-    [cafes, mood],
+function SearchForm({
+  value,
+  onChange,
+  onSubmit,
+}: {
+  value?: string;
+  onChange?: (value: string) => void;
+  onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <form
+      className="home-search"
+      role="search"
+      action="/cafes"
+      method="get"
+      onSubmit={onSubmit}
+    >
+      <label htmlFor="home-cafe-search">Find a café</label>
+      <div>
+        <input
+          id="home-cafe-search"
+          name="q"
+          type="search"
+          value={value}
+          onChange={
+            onChange ? (event) => onChange(event.currentTarget.value) : undefined
+          }
+          placeholder="Search by name or neighbourhood"
+        />
+        <button type="submit" aria-label="Search cafés">
+          <MagnifyingGlass size={20} weight="regular" aria-hidden="true" />
+        </button>
+      </div>
+    </form>
   );
+}
+
+function RoutedHomeSearch() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = search.trim();
+    if (!query) return;
+    navigate(`/cafes?${new URLSearchParams({ q: query }).toString()}`);
+  };
+
+  return (
+    <SearchForm value={search} onChange={setSearch} onSubmit={submitSearch} />
+  );
+}
+
+function HomeSearch() {
+  return useInRouterContext() ? <RoutedHomeSearch /> : <SearchForm />;
+}
+
+export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
+  const [occasionId, setOccasionId] = useState(occasionOptions[0].id);
+  const selectedOccasion = occasionOptions.find(
+    (option) => option.id === occasionId,
+  )!;
+  const matchingCafes = useMemo(
+    () => filterCafes(cafes, selectedOccasion.filters),
+    [cafes, selectedOccasion],
+  );
+  const occasionQuery = new URLSearchParams(selectedOccasion.query).toString();
   const facets = useMemo(() => getDiscoveryFacets(cafes), [cafes]);
   const quietCafes = useMemo(() => byIds(cafes, quietIds), [cafes]);
   const destinationCafes = useMemo(() => byIds(cafes, destinationIds), [cafes]);
@@ -109,17 +210,19 @@ export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
             atmosphere, wherever the day takes you.
           </p>
 
+          <HomeSearch />
+
           <fieldset className="mood-picker">
             <legend>What kind of café fits today?</legend>
             <div className="mood-picker__options">
-              {moodOptions.map(({ label, value, Icon }) => (
-                <label key={value} className="mood-choice">
+              {occasionOptions.map(({ id, label, Icon }) => (
+                <label key={id} className="mood-choice">
                   <input
                     type="radio"
                     name="homepage-mood"
-                    value={value}
-                    checked={mood === value}
-                    onChange={() => setMood(value)}
+                    value={id}
+                    checked={occasionId === id}
+                    onChange={() => setOccasionId(id)}
                   />
                   <Icon size={25} weight="regular" aria-hidden="true" />
                   <span>{label}</span>
@@ -131,16 +234,16 @@ export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
           <div className="discovery-actions">
             <a
               className="action-link action-link--primary"
-              href={`/cafes?mood=${encodeURIComponent(mood)}`}
-              aria-label={`Browse ${matchingCafes.length} cafés for ${selectedMood.label}`}
+              href={`/cafes?${occasionQuery}`}
+              aria-label={`Browse ${matchingCafes.length} cafés for ${selectedOccasion.label}`}
             >
               Browse {matchingCafes.length} cafés
               <ArrowRight size={18} weight="regular" aria-hidden="true" />
             </a>
             <a
               className="action-link"
-              href={`/roulette?mood=${encodeURIComponent(mood)}`}
-              aria-label={`Roulette for ${selectedMood.label}`}
+              href={`/roulette?${occasionQuery}`}
+              aria-label={`Roulette for ${selectedOccasion.label}`}
             >
               Try café roulette
               <Shuffle size={18} weight="regular" aria-hidden="true" />

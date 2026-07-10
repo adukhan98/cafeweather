@@ -23,11 +23,30 @@ export default function CafeMapCanvas({
   onError,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<Marker[]>([]);
+  const markersRef = useRef(
+    new Map<
+      string,
+      {
+        marker: Marker;
+        element: HTMLButtonElement;
+        glyph: HTMLSpanElement;
+      }
+    >(),
+  );
+  const lastResultKeyRef = useRef("");
+  const onSelectRef = useRef(onSelect);
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [runtime, setRuntime] = useState<
     typeof import("maplibre-gl") | null
   >(null);
+
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
+  });
 
   useEffect(() => {
     let disposed = false;
@@ -56,48 +75,65 @@ export default function CafeMapCanvas({
         );
         instance.once("load", () => {
           ready = true;
-          onReady();
+          onReadyRef.current();
         });
         instance.once("error", () => {
-          if (!ready) onError("The map style could not be loaded.");
+          if (!ready) onErrorRef.current("The map style could not be loaded.");
         });
         setRuntime(maplibregl);
         setMap(instance);
       })
       .catch((error: unknown) => {
         if (disposed) return;
-        onError(error instanceof Error ? error.message : "The map could not be started.");
+        onErrorRef.current(
+          error instanceof Error ? error.message : "The map could not be started.",
+        );
       });
 
     return () => {
       disposed = true;
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
+      markersRef.current.forEach(({ marker }) => marker.remove());
+      markersRef.current.clear();
       instance?.remove();
     };
-  }, [onError, onReady]);
+  }, []);
 
   useEffect(() => {
     if (!map || !runtime) return;
 
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = cafes.map((cafe) => {
+    const cafeIds = new Set(cafes.map((cafe) => cafe.id));
+    markersRef.current.forEach(({ marker }, id) => {
+      if (!cafeIds.has(id)) {
+        marker.remove();
+        markersRef.current.delete(id);
+      }
+    });
+
+    for (const cafe of cafes) {
+      if (markersRef.current.has(cafe.id)) continue;
+
       const element = document.createElement("button");
       element.type = "button";
       element.className = "cafe-map__marker";
-      element.dataset.selected = String(cafe.id === selectedId);
+      element.setAttribute("aria-pressed", "false");
       element.setAttribute(
         "aria-label",
         `Show ${cafe.name}${cafe.branch ? `, ${cafe.branch}` : ""}, ${cafe.neighborhood}`,
       );
-      element.addEventListener("click", () => onSelect(cafe.id));
+      const glyph = document.createElement("span");
+      glyph.className = "cafe-map__marker-glyph";
+      glyph.setAttribute("aria-hidden", "true");
+      element.appendChild(glyph);
+      element.addEventListener("click", () => onSelectRef.current(cafe.id));
 
-      return new runtime.Marker({ element, anchor: "bottom" })
+      const marker = new runtime.Marker({ element, anchor: "bottom" })
         .setLngLat([cafe.lng, cafe.lat])
         .addTo(map);
-    });
+      markersRef.current.set(cafe.id, { marker, element, glyph });
+    }
 
-    if (cafes.length > 0) {
+    const resultKey = [...cafeIds].sort().join("|");
+    if (cafes.length > 0 && resultKey !== lastResultKeyRef.current) {
       const bounds = cafes.reduce(
         (current, cafe) => current.extend([cafe.lng, cafe.lat]),
         new runtime.LngLatBounds(
@@ -111,12 +147,16 @@ export default function CafeMapCanvas({
         duration: 0,
       });
     }
+    lastResultKeyRef.current = resultKey;
+  }, [cafes, map, runtime]);
 
-    return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
-    };
-  }, [cafes, map, onSelect, runtime, selectedId]);
+  useEffect(() => {
+    markersRef.current.forEach(({ element, glyph }, id) => {
+      const selected = id === selectedId;
+      element.setAttribute("aria-pressed", String(selected));
+      glyph.dataset.selected = String(selected);
+    });
+  }, [cafes, map, runtime, selectedId]);
 
   return (
     <div
