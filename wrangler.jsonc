@@ -4,9 +4,11 @@
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
+  "workers_dev": true,
+  "preview_urls": false,
   "vars": {
-    "TURNSTILE_SITE_KEY": "",
-    "TURNSTILE_HOSTNAME": "",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAADzZS74IprS07VFj",
+    "TURNSTILE_HOSTNAME": "cafe-weather.adnaankhan0901.workers.dev",
     "TURNSTILE_ACTION": "suggestion"
   },
   "observability": {
@@ -18,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "cafe-weather",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "78498833-1fd9-429e-9ec9-9f1eef756b34"
     }
   ]
 }

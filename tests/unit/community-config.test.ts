@@ -23,7 +23,7 @@ describe("community environment configuration", () => {
     });
   });
 
-  it("declares safe public vars without committing the Turnstile secret", async () => {
+  it("declares production-safe public vars without committing the Turnstile secret", async () => {
     const config = JSON.parse(
       await readFile(new URL("../../wrangler.jsonc", import.meta.url), "utf8"),
     ) as {
@@ -33,13 +33,17 @@ describe("community environment configuration", () => {
         logs?: { enabled?: boolean; head_sampling_rate?: number };
         traces?: { enabled?: boolean; head_sampling_rate?: number };
       };
+      workers_dev?: boolean;
+      preview_urls?: boolean;
     };
 
-    expect(config.vars).toMatchObject({
-      TURNSTILE_SITE_KEY: "",
-      TURNSTILE_HOSTNAME: "",
+    expect(config.vars).toEqual({
+      TURNSTILE_SITE_KEY: "0x4AAAAAADzZS74IprS07VFj",
+      TURNSTILE_HOSTNAME: "cafe-weather.adnaankhan0901.workers.dev",
       TURNSTILE_ACTION: "suggestion",
     });
+    expect(config.workers_dev).toBe(true);
+    expect(config.preview_urls).toBe(false);
     expect(JSON.stringify(config)).not.toContain("TURNSTILE_SECRET");
     expect(config.observability).toEqual({
       enabled: true,

@@ -74,36 +74,44 @@ The Playwright suite uses a disposable local community state, a real local D1 bi
 
 ## Cloudflare deployment
 
-1. Authenticate and create the production D1 database:
+The tracked Wrangler config is already connected to Café Weather's canonical
+production D1 database and Turnstile widget. Their database ID, site key, and
+hostname are public deployment identifiers; the signing and Turnstile secrets
+remain encrypted Cloudflare secrets and are never committed.
+
+To deploy the canonical production app:
+
+1. Authenticate with the Café Weather Cloudflare account:
 
    ```bash
    npx wrangler login
-   npx wrangler d1 create cafe-weather --location enam
    ```
 
-2. Replace the placeholder `database_id` in [`wrangler.jsonc`](wrangler.jsonc) with the returned UUID.
-
-3. Apply schema and verified data:
+2. Apply schema and verified data:
 
    ```bash
    npx wrangler d1 migrations apply cafe-weather --remote
    npm run db:seed:remote
    ```
 
-4. Configure production secrets:
+3. Provision or rotate production secrets when needed:
 
    ```bash
    npx wrangler secret put VISITOR_HMAC_SECRET
    npx wrangler secret put TURNSTILE_SECRET
    ```
 
-5. Put the public Turnstile site key and allowed hostname in `wrangler.jsonc` as `TURNSTILE_SITE_KEY` and `TURNSTILE_HOSTNAME`. Keep `TURNSTILE_ACTION` set to `suggestion`.
-
-6. Deploy:
+4. Deploy:
 
    ```bash
    npm run deploy
    ```
+
+For a fork or a different Cloudflare account, create a new D1 database and a
+Managed Turnstile widget first. Replace the tracked `database_id`,
+`TURNSTILE_SITE_KEY`, and `TURNSTILE_HOSTNAME` in `wrangler.jsonc` with that
+account's public identifiers, allow the exact production hostname in the
+widget, then follow the migration, seed, secret, and deploy steps above.
 
 Production suggestions fail closed if visitor signing or Turnstile is missing. The upload dry run verifies `.dev.vars` is not included in the Worker bundle.
 

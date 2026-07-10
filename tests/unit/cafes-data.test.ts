@@ -1,8 +1,19 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { cafes } from "../../app/data/cafes";
 import verifiedResearch from "../../research/cafes-verified.json";
 
 describe("verified launch cafe catalogue", () => {
+  it("keeps the generated seed compatible with remote D1 imports", () => {
+    const seed = readFileSync(
+      new URL("../../seed/dev.sql", import.meta.url),
+      "utf8",
+    );
+
+    expect(seed).not.toMatch(/^BEGIN TRANSACTION;$/mu);
+    expect(seed).not.toMatch(/^COMMIT;$/mu);
+  });
+
   it("matches every research-backed and derived field for every cafe", () => {
     const expected = verifiedResearch.records.map((record) => ({
       id: record.slug,
