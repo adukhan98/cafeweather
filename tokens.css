@@ -11,7 +11,8 @@
   --color-accent: oklch(42% 0.13 139);
   --color-accent-hover: oklch(35% 0.12 139);
   --color-accent-ink: oklch(97% 0.012 92);
-  --color-focus: oklch(47% 0.14 139);
+  --color-focus: oklch(52% 0.14 139);
+  --color-shadow: oklch(20% 0.018 112 / 0.18);
 
   --font-display: "Newsreader Variable", "Iowan Old Style", "Palatino Linotype", serif;
   --font-body: "IBM Plex Sans Variable", "Avenir Next", sans-serif;

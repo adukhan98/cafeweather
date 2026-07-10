@@ -20,6 +20,7 @@ export function Layout({ children }: { children: ReactNode }) {
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
+        <link rel="icon" href="data:," />
         <Meta />
         <Links />
       </head>

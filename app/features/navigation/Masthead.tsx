@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight } from "@phosphor-icons/react";
 
 const destinations = [
-  { label: "Browse", href: "/#browse" },
-  { label: "Map", href: "/#map" },
-  { label: "Roulette", href: "/#roulette" },
-  { label: "Suggest", href: "/#suggest" },
+  { label: "Browse", href: "/cafes" },
+  { label: "Map", href: "/cafes?view=map" },
+  { label: "Roulette", href: "/roulette" },
+  { label: "Suggest", href: "/suggest" },
 ] as const;
 
 export function Masthead() {
@@ -109,7 +110,7 @@ export function Masthead() {
                 onClick={() => closeMenu("main")}
               >
                 {destination.label}
-                <span aria-hidden="true">→</span>
+                <ArrowRight size={18} weight="regular" aria-hidden="true" />
               </a>
             </li>
           ))}

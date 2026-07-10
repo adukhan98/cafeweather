@@ -42,12 +42,12 @@ describe("Café Weather design-system contract", () => {
     });
   });
 
-  it("describes the shipped artifact as a shell without future enrichment", () => {
-    expect(css.split("\n", 1)[0]).toContain("macrostructure: App Shell Foundation");
-    expect(css.split("\n", 1)[0]).toContain("enrichment: none");
+  it("describes the shipped discovery artifact and its real map enrichment", () => {
+    expect(css.split("\n", 1)[0]).toContain("macrostructure: Ecosystem Index");
+    expect(css.split("\n", 1)[0]).toContain("enrichment: code-native MapLibre");
     expect(hallmarkLog[0]).toMatchObject({
-      macrostructure: "App Shell Foundation",
-      enrichment: "none",
+      macrostructure: "Ecosystem Index",
+      enrichment: "code-native MapLibre map",
     });
   });
 

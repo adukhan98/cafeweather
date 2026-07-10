@@ -7,8 +7,8 @@ export function SiteFooter() {
       </div>
 
       <nav className="site-footer__links" aria-label="Footer">
-        <a href="/#browse">Browse</a>
-        <a href="/#suggest">Suggest</a>
+        <a href="/cafes">Browse</a>
+        <a href="/suggest">Suggest</a>
       </nav>
 
       <p className="site-footer__provenance">

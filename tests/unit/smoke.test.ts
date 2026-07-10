@@ -22,7 +22,8 @@ describe("Cafe Weather scaffold", () => {
     );
 
     expect(markup).toContain("Café Weather");
-    expect(markup).toContain("shell-placeholder");
+    expect(markup).toContain("Toronto cafés for the mood you’re in.");
+    expect(markup).toContain("For a quiet afternoon");
   });
 
   it("marks the response as failed when server rendering errors", () => {
