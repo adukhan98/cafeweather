@@ -1394,6 +1394,11 @@ h6 {
   border-block-end: var(--rule-strong) solid var(--color-ink);
 }
 
+.roulette-page__headline {
+  display: grid;
+  gap: var(--space-md);
+}
+
 .roulette-page__header > p:last-child {
   max-width: 50ch;
   margin: 0;
@@ -1824,13 +1829,20 @@ h6 {
     gap: var(--space-xl);
   }
 
+  .cafe-detail__visit > div,
+  .cafe-detail__profile > div,
+  .cafe-detail__verification > div,
+  .cafe-detail__nearby > div,
+  .cafe-detail__community > div {
+    grid-column: 2;
+  }
+
   .roulette-page__header {
     grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
     align-items: end;
   }
 
-  .roulette-page__header .eyebrow,
-  .roulette-page__header h1 {
+  .roulette-page__headline {
     grid-column: 1;
   }
 
@@ -1855,6 +1867,14 @@ h6 {
     grid-template-columns: minmax(6rem, 0.25fr) minmax(0, 1.05fr) minmax(18rem, 0.7fr);
     align-items: end;
     gap: var(--space-xl);
+  }
+
+  .roulette-reveal__identity {
+    grid-column: 1 / span 2;
+  }
+
+  .roulette-reveal__reason {
+    grid-column: 3;
   }
 
   .roulette-reveal .roulette-actions {

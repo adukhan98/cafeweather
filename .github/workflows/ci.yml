@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify deterministic café seed
+        run: |
+          node scripts/generate-d1-seed.mjs > /tmp/cafe-weather-seed.sql
+          cmp seed/dev.sql /tmp/cafe-weather-seed.sql
+
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run test:e2e
+
+      - name: Verify Cloudflare upload bundle
+        run: npx wrangler deploy --dry-run

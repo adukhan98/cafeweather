@@ -40,9 +40,8 @@ function loadTurnstileApi(): Promise<TurnstileApi> {
   );
   const script = existing ?? document.createElement("script");
   const pending = new Promise<TurnstileApi>((resolve, reject) => {
-    let timeoutId: number | undefined;
     const cleanUp = () => {
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
       script.removeEventListener("load", onLoad);
       script.removeEventListener("error", onError);
     };
@@ -63,7 +62,7 @@ function loadTurnstileApi(): Promise<TurnstileApi> {
 
     script.addEventListener("load", onLoad);
     script.addEventListener("error", onError);
-    timeoutId = window.setTimeout(
+    const timeoutId = window.setTimeout(
       () => fail(new Error("Turnstile script load timed out.")),
       TURNSTILE_LOAD_TIMEOUT_MS,
     );

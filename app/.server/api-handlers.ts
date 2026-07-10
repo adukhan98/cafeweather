@@ -502,6 +502,8 @@ export function createApiHandler(dependencies: ApiDependencies) {
           405,
           "method_not_allowed",
           `Use ${methods.join(" or ")} for this resource.`,
+          undefined,
+          { Allow: methods.join(", ") },
         );
       }
 

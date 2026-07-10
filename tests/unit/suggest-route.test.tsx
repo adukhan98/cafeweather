@@ -67,9 +67,12 @@ describe("suggest route", () => {
       turnstileRequired: true,
     });
     expect(JSON.stringify(result.data)).not.toContain(secret);
-    expect(new Headers(result.init?.headers).get("set-cookie")).toMatch(
+    const headers = new Headers(result.init?.headers);
+    expect(headers.get("set-cookie")).toMatch(
       /^cw_visitor=.*; Path=\/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax$/,
     );
+    expect(headers.get("cache-control")).toBe("private, no-store");
+    expect(headers.get("vary")).toBe("Cookie");
   });
 
   it("does not replace an already-valid visitor cookie", async () => {
@@ -92,6 +95,10 @@ describe("suggest route", () => {
     });
 
     expect(new Headers(second.init?.headers).get("set-cookie")).toBeNull();
+    expect(new Headers(second.init?.headers).get("cache-control")).toBe(
+      "private, no-store",
+    );
+    expect(new Headers(second.init?.headers).get("vary")).toBe("Cookie");
   });
 
   it("renders the editorial suggestion page and every visible field", () => {

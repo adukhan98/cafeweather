@@ -10,7 +10,6 @@ import { DataSourceNotice } from "../discovery/DataSourceNotice";
 import {
   buildCatalogueParams,
   buildRouletteParams,
-  initialRouletteSeed,
 } from "./roulette-params";
 
 export { buildRouletteParams, initialRouletteSeed } from "./roulette-params";
@@ -74,8 +73,10 @@ export function RoulettePage(props: RoulettePageProps) {
     <div className="roulette-page">
       <DataSourceNotice source={props.source} />
       <header className="roulette-page__header">
-        <p className="eyebrow">Café roulette · one considered pick</p>
-        <h1>{cafe ? `Your café is ${cafe.name}.` : "No café fits those filters yet."}</h1>
+        <div className="roulette-page__headline">
+          <p className="eyebrow">Café roulette · one considered pick</p>
+          <h1>{cafe ? `Your café is ${cafe.name}.` : "No café fits those filters yet."}</h1>
+        </div>
         <p>
           One place from the verified guide, chosen for the mood you brought with you.
         </p>
@@ -103,8 +104,8 @@ export function RoulettePage(props: RoulettePageProps) {
           </p>
           <article className="roulette-reveal" aria-busy={rerollPending}>
             <div className="roulette-reveal__result" key={`${cafe.id}-${props.seed}`}>
-              <p className="section-number">Today’s pick</p>
               <div className="roulette-reveal__identity">
+                <p className="section-number">Today’s pick</p>
                 <p>{locationLabel(cafe)}</p>
                 <h2>{cafe.name}</h2>
               </div>

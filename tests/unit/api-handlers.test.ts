@@ -630,10 +630,18 @@ describe("Cafe Weather API handlers", () => {
 
     const cafesResponse = await request("/api/v1/cafes", { method: "POST" });
     const suggestionsResponse = await request("/api/v1/suggestions");
+    const reactionResponse = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions/cozy",
+      { method: "POST" },
+    );
 
     expect(cafesResponse.status).toBe(405);
     expect((await cafesResponse.json()).error.code).toBe("method_not_allowed");
+    expect(cafesResponse.headers.get("allow")).toBe("GET");
     expect(suggestionsResponse.status).toBe(405);
+    expect(suggestionsResponse.headers.get("allow")).toBe("POST");
+    expect(reactionResponse.status).toBe(405);
+    expect(reactionResponse.headers.get("allow")).toBe("PUT, DELETE");
   });
 
   it("rate-limits reactions by HMAC IP bucket without retaining the raw IP", async () => {

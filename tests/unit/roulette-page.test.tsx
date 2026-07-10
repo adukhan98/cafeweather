@@ -115,6 +115,25 @@ describe("RoulettePage", () => {
     );
   });
 
+  it("stacks the result label with its heading instead of hanging it beside the heading", () => {
+    const match = cafes.find((cafe) => cafe.slug === "misc-coffee-ossington")!;
+    renderPage("/roulette?mood=coffee-nerd", match);
+
+    expect(screen.getByText("Today’s pick").parentElement).toBe(
+      screen.getByRole("heading", { level: 2, name: match.name }).parentElement,
+    );
+  });
+
+  it("stacks the roulette eyebrow with its page heading", () => {
+    renderPage("/roulette?mood=coffee-nerd");
+
+    const stack = screen.getByText(
+      "Café roulette · one considered pick",
+    ).parentElement;
+    expect(stack).toBe(screen.getByRole("heading", { level: 1 }).parentElement);
+    expect(stack).toHaveClass("roulette-page__headline");
+  });
+
   it("lists active filters and links to the shared catalogue semantics", () => {
     renderPage("/roulette?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over");
 

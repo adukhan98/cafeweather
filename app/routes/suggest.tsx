@@ -43,11 +43,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     ? await getVisitorIdentity(request, env.VISITOR_HMAC_SECRET)
     : undefined;
 
-  return data(publicData, {
-    ...(visitor?.setCookie
-      ? { headers: { "Set-Cookie": visitor.setCookie } }
-      : {}),
+  const headers = new Headers({
+    "Cache-Control": "private, no-store",
+    Vary: "Cookie",
   });
+  if (visitor?.setCookie) headers.set("Set-Cookie", visitor.setCookie);
+
+  return data(publicData, { headers });
 }
 
 export function meta() {

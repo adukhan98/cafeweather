@@ -70,8 +70,8 @@ export function CafeDetailPage({
 
       <div className="cafe-detail__body">
         <section className="cafe-detail__visit" aria-labelledby="visit-title">
-          <p className="section-number">01</p>
           <div>
+            <p className="section-number">01</p>
             <h2 id="visit-title">Plan the visit</h2>
             <address>{cafe.address}</address>
             <p>{cafe.neighborhood}</p>
@@ -89,8 +89,8 @@ export function CafeDetailPage({
         </section>
 
         <section className="cafe-detail__profile" aria-labelledby="profile-title">
-          <p className="section-number">02</p>
           <div>
+            <p className="section-number">02</p>
             <h2 id="profile-title">What it feels like</h2>
             <h3>Moods</h3>
             <FacetList label="Café moods" values={cafe.moods} />
@@ -100,8 +100,8 @@ export function CafeDetailPage({
         </section>
 
         <section className="cafe-detail__verification" aria-labelledby="verification-title">
-          <p className="section-number">03</p>
           <div>
+            <p className="section-number">03</p>
             <h2 id="verification-title">How this entry was checked</h2>
             <p>{branchVerification(cafe)}</p>
             <p>
@@ -122,8 +122,8 @@ export function CafeDetailPage({
       </div>
 
       <section className="cafe-detail__nearby" aria-labelledby="nearby-title">
-        <p className="section-number">04</p>
         <div>
+          <p className="section-number">04</p>
           <h2 id="nearby-title">Nearby alternatives</h2>
           {nearby.length > 0 ? (
             <ol className="cafe-results" aria-label="Nearby café alternatives">
@@ -141,8 +141,8 @@ export function CafeDetailPage({
         aria-labelledby="community-reactions-title"
         data-reaction-slot
       >
-        <p className="section-number">05</p>
         <div>
+          <p className="section-number">05</p>
           <h2 id="community-reactions-title">How did this place feel?</h2>
           {reactionBar === undefined ? <ReactionBar slug={cafe.slug} /> : reactionBar}
         </div>

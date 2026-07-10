@@ -98,6 +98,22 @@ describe("CafeDetailPage", () => {
     expect(boundary).toHaveAttribute("aria-labelledby", "community-reactions-title");
   });
 
+  it("stacks section labels with their headings instead of hanging them beside the heading", () => {
+    render(<CafeDetailPage cafe={cafe("larrys-place-parkdale")} />);
+
+    for (const [label, heading] of [
+      ["01", "Plan the visit"],
+      ["02", "What it feels like"],
+      ["03", "How this entry was checked"],
+      ["04", "Nearby alternatives"],
+      ["05", "How did this place feel?"],
+    ] as const) {
+      expect(screen.getByText(label).parentElement).toBe(
+        screen.getByRole("heading", { name: heading }).parentElement,
+      );
+    }
+  });
+
   it("renders the live reaction bar by café slug at the existing boundary", async () => {
     render(<CafeDetailPage cafe={cafe("larrys-place-parkdale")} />);
 
