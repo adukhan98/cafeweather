@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { reactionKinds } from "../../app/contracts/community";
 import { cafes } from "../../app/data/cafes";
 import {
   CafeDetailNotFound,
@@ -16,6 +17,17 @@ function cafe(slug: string) {
 }
 
 describe("CafeDetailPage", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          reactions: reactionKinds.map((kind) => ({ kind, count: 0, active: false })),
+        }),
+      ),
+    );
+  });
+
   it("renders the exact branch, address, recommendation, links, and verified date", () => {
     const larrys = cafe("larrys-place-parkdale");
     render(<CafeDetailPage cafe={larrys} />);
@@ -84,6 +96,21 @@ describe("CafeDetailPage", () => {
 
     expect(boundary).toHaveAttribute("id", "community-reactions");
     expect(boundary).toHaveAttribute("aria-labelledby", "community-reactions-title");
+  });
+
+  it("renders the live reaction bar by café slug at the existing boundary", async () => {
+    render(<CafeDetailPage cafe={cafe("larrys-place-parkdale")} />);
+
+    const boundary = document.querySelector("#community-reactions")!;
+    expect(
+      await within(boundary as HTMLElement).findByRole("button", {
+        name: "Cozy, 0 reactions",
+      }),
+    ).toBeEnabled();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/v1/cafes/larrys-place-parkdale/reactions",
+      expect.any(Object),
+    );
   });
 
   it("discloses when the verified snapshot fallback is in use", () => {

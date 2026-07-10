@@ -1,10 +1,12 @@
 import { ArrowLeft, ArrowSquareOut, MapPin } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 
 import type { Cafe } from "../../contracts/cafes";
 import { formatFacet } from "../discovery/facets";
 import { CafeRow } from "./CafeRow";
 import type { CatalogueSource } from "../../.server/services/catalogue";
 import { DataSourceNotice } from "../discovery/DataSourceNotice";
+import { ReactionBar } from "../community/ReactionBar";
 
 function verifiedDate(value: string): string {
   const date = new Date(`${value}T00:00:00Z`);
@@ -42,10 +44,12 @@ export function CafeDetailPage({
   cafe,
   nearby = [],
   source,
+  reactionBar,
 }: {
   cafe: Cafe;
   nearby?: readonly Cafe[];
   source?: CatalogueSource;
+  reactionBar?: ReactNode;
 }) {
   return (
     <article className="cafe-detail">
@@ -140,7 +144,7 @@ export function CafeDetailPage({
         <p className="section-number">05</p>
         <div>
           <h2 id="community-reactions-title">How did this place feel?</h2>
-          <p>Quick community reactions are coming in the next product pass.</p>
+          {reactionBar === undefined ? <ReactionBar slug={cafe.slug} /> : reactionBar}
         </div>
       </section>
     </article>
