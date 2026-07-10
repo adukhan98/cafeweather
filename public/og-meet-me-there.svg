@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#E8694D"/>
+  <circle cx="1010" cy="90" r="210" fill="#F3C95F"/>
+  <circle cx="170" cy="120" r="105" fill="none" stroke="#8E2F2D" stroke-width="18" opacity=".45"/>
+  <path d="M-40 330 1240 220" stroke="#2A1712" stroke-width="18"/>
+  <text x="55" y="390" fill="#2A1712" font-family="Georgia,serif" font-size="168" font-weight="700">Meet Me There</text>
+  <text x="66" y="500" fill="#2A1712" font-family="Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="5">A TORONTO CAFÉ GUIDE</text>
+</svg>

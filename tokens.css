@@ -1,23 +1,27 @@
-/* Café Weather · Garden design tokens · light paper / roman serif / leaf green */
 :root {
-  --color-paper: oklch(97% 0.012 92);
-  --color-paper-2: oklch(94% 0.018 94);
-  --color-paper-3: oklch(91% 0.022 96);
-  --color-ink: oklch(20% 0.018 112);
-  --color-ink-soft: oklch(30% 0.018 110);
-  --color-muted: oklch(42% 0.022 108);
-  --color-rule: oklch(69% 0.026 106);
-  --color-rule-strong: oklch(38% 0.026 108);
-  --color-accent: oklch(42% 0.13 139);
-  --color-accent-hover: oklch(35% 0.12 139);
-  --color-accent-ink: oklch(97% 0.012 92);
-  --color-focus: oklch(52% 0.14 139);
-  --color-error: oklch(44% 0.16 28);
-  --color-shadow: oklch(20% 0.018 112 / 0.18);
-
-  --font-display: "Newsreader Variable", "Iowan Old Style", "Palatino Linotype", serif;
-  --font-body: "IBM Plex Sans Variable", "Avenir Next", sans-serif;
-
+  --color-espresso: #2a1712;
+  --color-cream: #f7ead2;
+  --color-terracotta: #e8694d;
+  --color-honey: #f3c95f;
+  --color-clay: #efb6a3;
+  --color-burgundy: #8e2f2d;
+  --color-ink: var(--color-espresso);
+  --color-paper: var(--color-cream);
+  --color-paper-2: #f2ddbf;
+  --color-paper-3: #e8ccaa;
+  --color-muted: #785f54;
+  --color-rule: #a98774;
+  --color-rule-strong: var(--color-espresso);
+  --color-accent: var(--color-terracotta);
+  --color-accent-hover: var(--color-burgundy);
+  --color-accent-ink: var(--color-espresso);
+  --color-focus: #165dff;
+  --color-error: #9f1d20;
+  --color-success: #2f6a43;
+  --color-shadow: rgb(142 47 45 / 35%);
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "IBM Plex Sans Variable", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --space-2xs: 0.25rem;
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
@@ -27,7 +31,6 @@
   --space-2xl: 4rem;
   --space-3xl: 6rem;
   --space-4xl: 9rem;
-
   --text-xs: 0.64rem;
   --text-sm: 0.8rem;
   --text-base: 1rem;
@@ -37,26 +40,18 @@
   --text-2xl: 2.4414rem;
   --text-3xl: 3.0518rem;
   --text-4xl: 3.8147rem;
-  --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
-
+  --text-display: clamp(3.5rem, 11vw, 11rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-micro: 120ms;
   --dur-short: 264ms;
-  --dur-long: 504ms;
-
+  --dur-long: 520ms;
   --rule-hair: 1px;
   --rule-strong: 2px;
-  --rule-double: 4px;
-  --radius-none: 0;
-  --radius-sm: 0.125rem;
-  --radius-md: 0.25rem;
-
   --target-min: 2.75rem;
-  --page-max: 90rem;
-  --page-gutter: clamp(1rem, 4vw, 4rem);
-
+  --page-max: 100rem;
+  --page-gutter: clamp(1rem, 3vw, 3rem);
   --z-base: 1;
   --z-raised: 10;
   --z-dropdown: 100;
