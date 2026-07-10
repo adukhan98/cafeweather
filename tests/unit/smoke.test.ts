@@ -28,7 +28,7 @@ describe("Meet Me There scaffold", () => {
 
     expect(markup).toContain("Meet Me There");
     expect(markup).toContain("A better answer to “where?”");
-    expect(markup).toContain("For a quiet afternoon");
+    expect(markup).toContain("Where are we meeting?");
   });
 
   it("marks the response as failed when server rendering errors", () => {

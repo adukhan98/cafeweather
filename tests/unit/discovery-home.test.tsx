@@ -29,18 +29,25 @@ function LocationProbe() {
 
 describe("DiscoveryHome", () => {
   it("renders the agreed editorial discovery surfaces", () => {
-    renderHome();
+    const { container } = renderHome();
+
+    expect(container.querySelectorAll(".discovery-home > .scene")).toHaveLength(7);
 
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Toronto cafés for the mood you’re in.",
+        name: "Where are we meeting?",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "What kind of café fits today?" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "For a quiet afternoon" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Worth crossing the city for" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "By neighbourhood" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "What does today need?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "What does today need?" })).toBeInTheDocument();
+    for (const name of [
+      "A few places we could go",
+      "Leave it to chance.",
+      "Places people keep mentioning",
+      "Meet somewhere nearby.",
+      "Know a place?",
+    ]) expect(screen.getByRole("heading", { name })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Toronto café map" })).toBeInTheDocument();
   });
 
@@ -73,7 +80,7 @@ describe("DiscoveryHome", () => {
     const user = userEvent.setup();
     renderHome();
 
-    const search = screen.getByRole("searchbox", { name: "Find a café" });
+    const search = screen.getByRole("searchbox", { name: "What kind of place?" });
     await user.type(search, "Misc Coffee{Enter}");
 
     expect(screen.getByLabelText("Current URL")).toHaveTextContent(
