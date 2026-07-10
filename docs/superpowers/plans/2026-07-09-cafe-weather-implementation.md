@@ -4,7 +4,7 @@
 
 **Goal:** Ship a production-ready, Cloudflare-native Toronto café discovery app with mood-led exploration, map/list browsing, deterministic roulette, café details, structured reactions, and moderated suggestions.
 
-**Architecture:** A React Router/React TypeScript client is served from Cloudflare Workers static assets, with `/api/*` handled by the same Worker. Seeded café data guarantees a complete read experience without credentials; D1 stores idempotent anonymous reactions and pending suggestions. Domain behavior stays in framework-independent modules so filters, roulette, and validation can be proved through TDD.
+**Architecture:** A React Router 8 framework-mode application renders indexable café routes through SSR on one Cloudflare Worker. Route loaders/actions call shared server services directly, while `/api/v1/*` resource routes adapt the same services for external JSON clients. Seeded café data guarantees a complete read experience without credentials; D1 stores idempotent anonymous reactions and pending suggestions.
 
 **Tech Stack:** React 19, React Router, Vite, TypeScript, Tailwind CSS v4, Cloudflare Workers, D1, MapLibre GL, Zod, Phosphor Icons, Vitest, Testing Library, Playwright.
 
@@ -13,20 +13,21 @@
 ## File map
 
 - `package.json` — commands and dependency lock.
-- `vite.config.ts`, `tsconfig*.json`, `wrangler.jsonc` — Vite, TypeScript, Worker, assets, and D1 configuration.
-- `tokens.css`, `src/styles/app.css` — Hallmark tokens and application styles.
-- `src/data/cafes.ts` — verified launch catalogue.
-- `src/domain/types.ts` — café, filter, reaction, and suggestion contracts.
-- `src/domain/filter-cafes.ts` — pure search/filter logic.
-- `src/domain/roulette.ts` — seeded, filter-aware selection.
-- `src/domain/validation.ts` — shared Zod input schemas.
-- `src/app/router.tsx`, `src/app/AppShell.tsx` — routes and shared chrome.
-- `src/features/discovery/*` — homepage surfaces and catalogue filters.
-- `src/features/map/*` — lazy MapLibre map and accessible fallback.
-- `src/features/cafes/*` — café entity rows and detail page.
-- `src/features/roulette/*` — roulette state and reveal UI.
-- `src/features/community/*` — reactions and suggestion form.
-- `worker/index.ts`, `worker/db.ts`, `worker/http.ts` — API routing, D1 access, and responses.
+- `vite.config.ts`, `react-router.config.ts`, `tsconfig.json`, `wrangler.jsonc` — framework, Worker, bindings, and D1 configuration.
+- `tokens.css`, `app/app.css` — Hallmark tokens and application styles.
+- `app/data/cafes.ts` — verified launch catalogue.
+- `app/contracts/*` — café, filter, reaction, and suggestion contracts.
+- `app/domain/filter-cafes.ts` — pure search/filter logic.
+- `app/domain/roulette.ts` — Web-Crypto seeded, filter-aware selection.
+- `app/root.tsx`, `app/routes.ts`, `app/components/AppShell.tsx` — route registry and shared chrome.
+- `app/routes/*` — pages plus JSON resource routes.
+- `app/features/discovery/*` — homepage surfaces and catalogue filters.
+- `app/features/map/*` — client-only MapLibre map and accessible fallback.
+- `app/features/cafes/*` — café entity rows and detail page.
+- `app/features/roulette/*` — roulette state and reveal UI.
+- `app/features/community/*` — reactions and suggestion form.
+- `app/.server/*` — D1 repositories, services, Turnstile, visitor cookie, origin checks, and HTTP errors.
+- `workers/app.ts` — generated React Router request-handler adapter only.
 - `migrations/0001_initial.sql` — D1 schema and constraints.
 - `tests/unit/*`, `tests/components/*`, `tests/worker/*` — Vitest suites.
 - `e2e/*.spec.ts` — real browser paths.
@@ -34,9 +35,9 @@
 
 ### Task 1: Scaffold and prove the test harness
 
-**Files:** Create all root config files, `src/main.tsx`, `src/app/router.tsx`, `src/styles/app.css`, `tests/setup.ts`, and `tests/unit/smoke.test.ts`.
+**Files:** Create all root config files, `app/root.tsx`, `app/routes.ts`, `app/app.css`, `workers/app.ts`, `tests/setup.ts`, and `tests/unit/smoke.test.ts`.
 
-- [ ] Write `tests/unit/smoke.test.ts` first with an import of `src/domain/types.ts` and an assertion that a minimal café record preserves its slug.
+- [ ] Write `tests/unit/smoke.test.ts` first with an import of `app/contracts/cafes.ts` and an assertion that a minimal café record preserves its slug.
 - [ ] Run `npm test -- tests/unit/smoke.test.ts` and confirm it fails because the module does not exist.
 - [ ] Add the React/Vite/Worker scaffold and the minimal `Cafe` type required by the test.
 - [ ] Install only dependencies declared in `package.json`; verify Tailwind v4 uses `@tailwindcss/vite` and icons use `@phosphor-icons/react`.
@@ -45,7 +46,7 @@
 
 ### Task 2: Implement the catalogue domain with TDD
 
-**Files:** Create `src/data/cafes.ts`, `src/domain/filter-cafes.ts`, `src/domain/roulette.ts`, `tests/unit/filter-cafes.test.ts`, and `tests/unit/roulette.test.ts`.
+**Files:** Create `app/data/cafes.ts`, `app/domain/filter-cafes.ts`, `app/domain/roulette.ts`, `tests/unit/filter-cafes.test.ts`, and `tests/unit/roulette.test.ts`.
 
 - [ ] Write failing filter tests covering combined mood/neighbourhood/offering filters, accent-insensitive search, reset behavior, and empty results.
 - [ ] Run the filter suite and confirm failures are missing-export failures.
@@ -58,7 +59,7 @@
 
 ### Task 3: Implement Worker/D1 APIs with TDD
 
-**Files:** Create `worker/index.ts`, `worker/db.ts`, `worker/http.ts`, `src/domain/validation.ts`, `migrations/0001_initial.sql`, and `tests/worker/api.test.ts`.
+**Files:** Create `app/.server/db/*`, `app/.server/services/*`, `app/.server/http/*`, `app/contracts/validation.ts`, versioned resource routes, `migrations/0001_initial.sql`, and `tests/worker/api.test.ts`.
 
 - [ ] Write failing tests for `GET /api/cafes`, café 404, reaction validation, idempotent reactions, valid suggestion creation, honeypot rejection, and unavailable-D1 fallback.
 - [ ] Run `npm test -- tests/worker/api.test.ts` and confirm the routes return missing-handler failures.
@@ -69,7 +70,7 @@
 
 ### Task 4: Build the Hallmark design system and app shell
 
-**Files:** Create `tokens.css`, `.hallmark/preflight.json`, `.hallmark/log.json`, `src/app/AppShell.tsx`, `src/features/navigation/Masthead.tsx`, and component tests.
+**Files:** Create `tokens.css`, `.hallmark/preflight.json`, `.hallmark/log.json`, `app/components/AppShell.tsx`, `app/features/navigation/Masthead.tsx`, and component tests.
 
 - [ ] Write failing component tests for skip navigation, visible masthead destinations, mobile menu disclosure, keyboard focus restoration, and footer source disclosure.
 - [ ] Run the tests and confirm the shell is absent.

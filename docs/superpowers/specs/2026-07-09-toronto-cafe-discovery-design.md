@@ -107,12 +107,13 @@ Static seed data remains the build-time catalogue fallback. D1 becomes authorita
 
 ## Architecture
 
-- React Router v7 framework application with TypeScript.
+- React Router v8 framework-mode application with TypeScript and SSR on Cloudflare Workers.
 - Tailwind CSS v4 for utility styling, backed by Hallmark CSS tokens.
-- Cloudflare Workers for SSR/static assets and API routes.
+- One Cloudflare Worker for SSR, static assets, route loaders/actions, and versioned API resource routes.
 - Cloudflare D1 for reactions, suggestions, and future catalogue administration.
 - R2 is reserved for future licensed venue media; it is not required for launch.
 - MapLibre renders the interactive map with a configurable tile style and an attribution-compliant provider.
+- Route loaders/actions call shared server services directly; versioned `/api/v1/*` resource routes expose the same services externally.
 - Zod validates shared form/API inputs.
 - Vitest and Testing Library cover units/components; Playwright covers critical browser paths.
 
