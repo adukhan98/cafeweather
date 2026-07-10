@@ -34,6 +34,13 @@ function renderCatalogue(initialEntry = "/cafes") {
 }
 
 describe("CafeCatalogue", () => {
+  it("opens with the invitation-led browse heading", () => {
+    renderCatalogue();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Find somewhere that fits." }),
+    ).toBeInTheDocument();
+  });
+
   it("hydrates combined filters from the URL and reports the exact result count", () => {
     renderCatalogue(
       "/cafes?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
@@ -50,7 +57,7 @@ describe("CafeCatalogue", () => {
 
     await user.type(screen.getByRole("searchbox", { name: "Search cafés" }), "Bloom");
     await user.click(screen.getByLabelText("Moods filters"));
-    await user.click(screen.getByRole("checkbox", { name: "Study friendly" }));
+    await user.click(screen.getByRole("button", { name: /Add Study friendly filter/ }));
 
     const url = screen.getByLabelText("Current URL");
     await waitFor(() => expect(url).toHaveTextContent("q=Bloom"));
@@ -85,7 +92,7 @@ describe("CafeCatalogue", () => {
         target: { value: "Bloom" },
       });
       fireEvent.click(screen.getByLabelText("Moods filters"));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Study friendly" }));
+      fireEvent.click(screen.getByRole("button", { name: /Add Study friendly filter/ }));
 
       expect(screen.getByLabelText("Current URL")).toHaveTextContent(
         "/cafes?q=Bloom&mood=study-friendly",
@@ -110,7 +117,7 @@ describe("CafeCatalogue", () => {
       expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes?q=Bloom");
 
       fireEvent.click(screen.getByLabelText("Moods filters"));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Study friendly" }));
+      fireEvent.click(screen.getByRole("button", { name: /Add Study friendly filter/ }));
       expect(screen.getByLabelText("Current URL")).toHaveTextContent(
         "/cafes?q=Bloom&mood=study-friendly",
       );
@@ -124,10 +131,10 @@ describe("CafeCatalogue", () => {
     renderCatalogue();
 
     await user.click(screen.getByLabelText("Neighbourhoods filters"));
-    await user.click(screen.getByRole("checkbox", { name: "Ossington" }));
-    await user.click(screen.getByRole("checkbox", { name: "Financial District" }));
+    await user.click(screen.getByRole("button", { name: /Add Ossington filter/ }));
+    await user.click(screen.getByRole("button", { name: /Add Financial District filter/ }));
     await user.click(screen.getByLabelText("Offerings filters"));
-    await user.click(screen.getByRole("checkbox", { name: "Pour over" }));
+    await user.click(screen.getByRole("button", { name: /Add Pour over filter/ }));
 
     const results = screen.getByRole("list", { name: "Café results" });
     expect(within(results).getByRole("heading", { name: "Misc Coffee" })).toBeInTheDocument();
@@ -157,7 +164,7 @@ describe("CafeCatalogue", () => {
     renderCatalogue();
 
     await user.click(screen.getByLabelText("Moods filters"));
-    await user.click(screen.getByRole("checkbox", { name: "Coffee nerd" }));
+    await user.click(screen.getByRole("button", { name: /Add Coffee nerd filter/ }));
     await user.click(screen.getByRole("radio", { name: "Map view" }));
     expect(screen.getByLabelText("Current URL")).toHaveTextContent(
       "/cafes?mood=coffee-nerd&view=map",

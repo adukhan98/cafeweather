@@ -13,6 +13,7 @@ import "./styles/materials.css";
 import "./styles/motion.css";
 import "./styles/shell.css";
 import "./styles/home.css";
+import "./styles/catalogue.css";
 import "./fonts/latin-wght.css";
 import { AppShell } from "./components/AppShell";
 import { brand } from "./config/brand";

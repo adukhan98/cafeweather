@@ -15,6 +15,7 @@ import {
 import { formatFacet, getDiscoveryFacets } from "./facets";
 import type { CatalogueSource } from "../../.server/services/catalogue";
 import { DataSourceNotice } from "./DataSourceNotice";
+import { FilterTab } from "./FilterTab";
 
 type FacetKey = "moods" | "neighborhoods" | "offerings" | "attributes";
 type CommitMode = "push" | "debounced-replace";
@@ -46,11 +47,13 @@ function FacetDisclosure({
   values,
   selected,
   onToggle,
+  countFor,
 }: {
   title: string;
   values: readonly string[];
   selected: readonly string[];
   onToggle: (value: string) => void;
+  countFor: (value: string) => number;
 }) {
   return (
     <details className="facet-disclosure">
@@ -62,14 +65,14 @@ function FacetDisclosure({
         <legend>{title}</legend>
         <div className="facet-disclosure__options">
           {values.map((value) => (
-            <label key={value}>
-              <input
-                type="checkbox"
-                checked={selected.includes(value)}
-                onChange={() => onToggle(value)}
-              />
-              <span>{formatFacet(value)}</span>
-            </label>
+            <FilterTab
+              key={value}
+              label={formatFacet(value)}
+              count={countFor(value)}
+              selected={selected.includes(value)}
+              onSelect={() => onToggle(value)}
+              onRemove={() => onToggle(value)}
+            />
           ))}
         </div>
       </fieldset>
@@ -98,6 +101,14 @@ export function CafeCatalogue({
   const results = useMemo(
     () => filterCafes(cafes, stateToFilters(state)),
     [cafes, state],
+  );
+  const facetCount = useCallback(
+    (facet: FacetKey, value: string) =>
+      cafes.filter((cafe) => {
+        if (facet === "neighborhoods") return cafe.neighborhood === value;
+        return cafe[facet].includes(value);
+      }).length,
+    [cafes],
   );
 
   useEffect(() => {
@@ -241,10 +252,11 @@ export function CafeCatalogue({
     <div className="catalogue-page">
       <DataSourceNotice source={source} />
       <header className="catalogue-page__header">
-        <h1>Every café in the guide.</h1>
+        <p className="eyebrow">The whole Toronto table</p>
+        <h1>Find somewhere that fits.</h1>
         <p>
-          Search all {cafes.length} verified or branch-qualified Toronto entries.
-          Filters combine across categories and stay shareable in the URL.
+          Start with a feeling, a neighbourhood, or the thing you want to order.
+          Every choice stays in the link, ready to pass along.
         </p>
       </header>
 
@@ -269,18 +281,21 @@ export function CafeCatalogue({
             values={facets.moods}
             selected={state.moods}
             onToggle={(value) => toggleFacet("moods", value)}
+            countFor={(value) => facetCount("moods", value)}
           />
           <FacetDisclosure
             title="Neighbourhoods"
             values={facets.neighborhoods}
             selected={state.neighborhoods}
             onToggle={(value) => toggleFacet("neighborhoods", value)}
+            countFor={(value) => facetCount("neighborhoods", value)}
           />
           <FacetDisclosure
             title="Offerings"
             values={facets.offerings}
             selected={state.offerings}
             onToggle={(value) => toggleFacet("offerings", value)}
+            countFor={(value) => facetCount("offerings", value)}
           />
         </div>
 
@@ -321,8 +336,9 @@ export function CafeCatalogue({
         </section>
 
         <div className="catalogue-controls__footer">
-          <p role="status" aria-live="polite">
-            {results.length === 1 ? "1 café" : `${results.length} cafés`}
+          <p className="catalogue-count" role="status" aria-live="polite">
+            <strong aria-hidden="true">{results.length}</strong>
+            <span>{results.length === 1 ? "1 café" : `${results.length} cafés`}</span>
           </p>
           <fieldset className="view-switch">
             <legend>Result view</legend>

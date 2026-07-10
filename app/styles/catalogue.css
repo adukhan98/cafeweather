@@ -1,0 +1,168 @@
+/* Café catalogue: a stack of invitations, not an inventory grid. */
+.catalogue-page {
+  width: 100%;
+  min-width: 0;
+  margin-inline: calc(var(--page-gutter) * -1);
+  overflow-x: clip;
+  background: var(--color-cream);
+}
+
+.catalogue-page__header,
+.catalogue-controls,
+.catalogue-page > .cafe-results,
+.catalogue-page > .cafe-map,
+.catalogue-page > .empty-results {
+  padding-inline: var(--page-gutter);
+}
+
+.catalogue-page__header {
+  display: grid;
+  min-height: min(70dvh, 42rem);
+  padding-block: clamp(var(--space-2xl), 12vw, var(--space-4xl));
+  align-content: center;
+  gap: var(--space-lg);
+  background: var(--color-terracotta);
+  color: var(--color-espresso);
+}
+.catalogue-page__header h1 {
+  max-width: 10ch;
+  font-size: var(--text-display);
+  line-height: 0.86;
+}
+.catalogue-page__header > p:not(.eyebrow) {
+  max-width: 34rem;
+  color: inherit;
+  font-size: var(--text-md);
+}
+
+.catalogue-controls {
+  display: grid;
+  gap: var(--space-xl);
+  padding-block: var(--space-2xl);
+  background: var(--color-honey);
+  color: var(--color-espresso);
+}
+.search-field { display: grid; gap: var(--space-xs); }
+.search-field label { font-weight: 700; }
+.search-field input {
+  width: 100%;
+  min-height: calc(var(--target-min) + var(--space-sm));
+  padding-inline: var(--space-md);
+  border: var(--rule-strong) solid var(--color-espresso);
+  border-radius: 0;
+  background: var(--color-cream);
+  color: var(--color-espresso);
+  font: inherit;
+  box-shadow: var(--space-xs) var(--space-xs) 0 var(--color-burgundy);
+}
+.search-field > p { margin: 0; font-size: var(--text-sm); }
+
+.catalogue-controls__facets { display: grid; gap: var(--space-sm); }
+.facet-disclosure { border-block-end: var(--rule-strong) solid currentColor; }
+.facet-disclosure summary {
+  min-height: var(--target-min);
+  padding-block: var(--space-sm);
+  color: inherit;
+  cursor: pointer;
+}
+.facet-disclosure fieldset { padding-block: var(--space-md) var(--space-lg); }
+.facet-disclosure__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.filter-tab {
+  display: inline-flex;
+  min-height: var(--target-min);
+  padding-inline: var(--space-md);
+  align-items: center;
+  gap: var(--space-sm);
+  border: var(--rule-strong) solid var(--color-espresso);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-espresso);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform var(--dur-micro) var(--ease-out), opacity var(--dur-short) var(--ease-out);
+}
+.filter-tab[data-state="selected"] {
+  background: var(--color-burgundy);
+  color: var(--color-cream);
+  box-shadow: var(--space-2xs) var(--space-2xs) 0 var(--color-espresso);
+}
+.filter-tab:disabled { cursor: not-allowed; opacity: 0.5; }
+.filter-tab:active { transform: translateY(var(--rule-strong)); }
+.filter-tab:focus-visible,
+.search-field input:focus-visible { outline: var(--rule-strong) solid var(--color-focus); outline-offset: var(--space-2xs); }
+
+.active-filters {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: var(--rule-strong) solid var(--color-espresso);
+  background: var(--color-paper);
+  box-shadow: var(--space-xs) var(--space-xs) 0 var(--color-burgundy);
+  transform: rotate(-0.4deg);
+}
+.active-filters ul { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.active-filters li { border-color: var(--color-espresso); }
+.catalogue-controls__footer { display: grid; gap: var(--space-md); }
+.catalogue-count { display: grid; margin: 0; line-height: 1; }
+.catalogue-count strong { font-family: var(--font-display); font-size: clamp(var(--text-4xl), 24vw, 12rem); font-weight: 600; line-height: 0.72; }
+.catalogue-count span { font-weight: 700; }
+.view-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.view-switch label { min-height: var(--target-min); border-color: var(--color-espresso); }
+
+.cafe-results {
+  display: grid;
+  gap: var(--space-xl);
+  margin: 0;
+  padding-block: var(--space-2xl);
+  list-style: none;
+  background: var(--color-clay);
+}
+.cafe-row {
+  position: relative;
+  display: grid;
+  padding: var(--space-xl);
+  gap: var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-paper);
+  color: var(--color-espresso);
+  box-shadow: var(--space-xs) var(--space-xs) 0 var(--color-shadow);
+}
+.cafe-row:nth-child(even) { transform: rotate(0.45deg); }
+.cafe-row:nth-child(odd) { transform: rotate(-0.35deg); }
+.cafe-row__index { margin: 0; color: var(--color-burgundy); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.cafe-row__name { font-size: clamp(var(--text-xl), 7vw, var(--text-3xl)); }
+.cafe-row__mood { width: fit-content; padding: var(--space-xs) var(--space-sm); border: var(--rule-strong) solid currentColor; color: var(--color-burgundy); font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; }
+.cafe-row__directions,
+.cafe-row__meet { display: inline-flex; min-height: var(--target-min); align-items: center; font-weight: 700; }
+.cafe-row__meet { color: var(--color-burgundy); }
+.empty-results { padding-block: var(--space-3xl); background: var(--color-clay); }
+.catalogue-page > .cafe-map { padding-block: var(--space-xl); background: var(--color-clay); }
+
+@media (hover: hover) {
+  .filter-tab:hover { transform: translateY(calc(var(--rule-hair) * -1)); }
+  .cafe-row a:hover { color: var(--color-burgundy); }
+}
+
+@media (min-width: 60rem) {
+  .catalogue-page__header { padding-inline: max(var(--page-gutter), 12vw); }
+  .catalogue-controls { grid-template-columns: minmax(18rem, 0.7fr) minmax(0, 1.3fr); padding-inline: max(var(--page-gutter), 8vw); }
+  .catalogue-controls__facets,
+  .active-filters,
+  .catalogue-controls__footer { grid-column: 2; }
+  .search-field { grid-column: 1; grid-row: 1 / span 3; align-content: start; position: sticky; top: var(--space-xl); }
+  .cafe-results { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); padding-inline: max(var(--page-gutter), 8vw); }
+  .cafe-row:nth-child(3n + 1) { grid-column: 1 / -1; width: min(72%, 56rem); }
+  .catalogue-page > .cafe-map { padding-inline: max(var(--page-gutter), 8vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-tab,
+  .cafe-row,
+  .active-filters { transition-duration: 0.01ms; transform: none; }
+}

@@ -30,4 +30,19 @@ describe("discovery URL parameters", () => {
       }).toString(),
     ).toBe("");
   });
+
+  it("deduplicates repeated filters and falls back from unknown views", () => {
+    const state = parseDiscoveryParams(
+      new URLSearchParams(
+        "mood=cozy&mood=cozy&neighborhood=&view=tiles&unrelated=ignored",
+      ),
+    );
+
+    expect(state).toMatchObject({
+      moods: ["cozy"],
+      neighborhoods: [],
+      view: "list",
+    });
+    expect(serializeDiscoveryParams(state).toString()).toBe("mood=cozy");
+  });
 });

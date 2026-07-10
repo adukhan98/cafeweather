@@ -12,6 +12,7 @@ export function CafeRow({
 
   return (
     <li className="cafe-row">
+      <p className="cafe-row__index" aria-hidden="true">Meet me</p>
       <div className="cafe-row__identity">
         <Heading className="cafe-row__name">
           <a href={`/cafes/${cafe.slug}`}>{cafe.name}</a>
@@ -31,6 +32,9 @@ export function CafeRow({
         aria-label={`Directions to ${cafe.name}${cafe.branch ? `, ${cafe.branch}` : ""}`}
       >
         Directions
+      </a>
+      <a className="cafe-row__meet" href={`/cafes/${cafe.slug}`}>
+        Meet me there
       </a>
     </li>
   );
