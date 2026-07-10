@@ -147,9 +147,10 @@ export function CafeDetailPage({
   );
 }
 
-export function CafeDetailNotFound() {
+export function CafeDetailNotFound({ source }: { source?: CatalogueSource }) {
   return (
     <section className="not-found-page">
+      <DataSourceNotice source={source} />
       <p className="eyebrow">Café not found</p>
       <h1>That café isn’t in the guide.</h1>
       <p>The link may be out of date, or the café may still be waiting for verification.</p>

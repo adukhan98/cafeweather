@@ -39,6 +39,6 @@ export default function CafeDetailRoute({ loaderData }: Route.ComponentProps) {
       source={loaderData.source}
     />
   ) : (
-    <CafeDetailNotFound />
+    <CafeDetailNotFound source={loaderData.source} />
   );
 }

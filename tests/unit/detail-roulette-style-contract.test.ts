@@ -5,7 +5,7 @@ const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
 
 describe("detail and roulette interaction styling", () => {
   it("limits roulette reveal motion to transform and opacity", () => {
-    const body = css.match(/\.roulette-reveal\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const body = css.match(/\.roulette-reveal__result\s*\{([^}]*)\}/s)?.[1] ?? "";
     expect(body).toContain("transform:");
     expect(body).toContain("opacity:");
     expect(body).not.toMatch(/(?:top|left|width|height)\s*:/);
@@ -13,7 +13,8 @@ describe("detail and roulette interaction styling", () => {
 
   it("removes roulette spatial movement for reduced motion", () => {
     const reducedMotion = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
-    expect(reducedMotion).toMatch(/\.roulette-reveal[^{]*\{[^}]*transform:\s*none/s);
+    expect(reducedMotion).toMatch(/\.roulette-reveal__result[^{]*\{[^}]*transform:\s*none/s);
+    expect(reducedMotion).toMatch(/\.roulette-reveal__result[^{]*\{[^}]*animation:\s*none/s);
   });
 
   it("keeps roulette controls at the shared 44 pixel target", () => {

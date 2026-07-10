@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { cafes } from "../../app/data/cafes";
 import { CatalogueService } from "../../app/.server/services/catalogue";
@@ -144,16 +143,43 @@ describe("RoulettePage", () => {
   });
 
   it("keeps the reroll control focused, announces the result, and blocks repeat clicks", async () => {
-    const user = userEvent.setup();
+    const uuid = vi
+      .spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValue("00000000-0000-4000-8000-000000000001");
     renderPage("/roulette?mood=cozy", cafes.find((cafe) => cafe.slug === "nabulu-coffee-st-joseph")!);
 
     const reroll = screen.getByRole("button", { name: "Reroll" });
     reroll.focus();
-    await user.click(reroll);
+    fireEvent.click(reroll);
+    fireEvent.click(reroll);
 
     expect(reroll).toHaveFocus();
-    expect(reroll).toBeDisabled();
+    expect(reroll).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Choosing another café.");
+    expect(uuid).toHaveBeenCalledTimes(1);
+    uuid.mockRestore();
+  });
+
+  it("restarts only the visual reveal while preserving the reroll control node", () => {
+    const state = parseDiscoveryParams(new URLSearchParams("mood=cozy"));
+    const firstCafe = cafes.find((cafe) => cafe.slug === "nabulu-coffee-st-joseph")!;
+    const secondCafe = cafes.find((cafe) => cafe.slug === "rooms-coffee-ossington")!;
+    const { container, rerender } = render(
+      <MemoryRouter>
+        <RoulettePage cafe={firstCafe} state={state} seed="first" />
+      </MemoryRouter>,
+    );
+    const control = screen.getByRole("button", { name: "Reroll" });
+    const firstReveal = container.querySelector(".roulette-reveal__result");
+
+    rerender(
+      <MemoryRouter>
+        <RoulettePage cafe={secondCafe} state={state} seed="second" />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector(".roulette-reveal__result")).not.toBe(firstReveal);
+    expect(screen.getByRole("button", { name: "Reroll" })).toBe(control);
   });
 
   it("offers clear and browse recovery when no café matches", () => {

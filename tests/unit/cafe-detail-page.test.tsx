@@ -103,4 +103,12 @@ describe("CafeDetailNotFound", () => {
     expect(screen.getByRole("link", { name: "Browse every café" })).toHaveAttribute("href", "/cafes");
     expect(screen.getByRole("link", { name: "Try café roulette" })).toHaveAttribute("href", "/roulette");
   });
+
+  it("discloses when a seed snapshot may omit a live D1-only café", () => {
+    render(<CafeDetailNotFound source="seed" />);
+
+    expect(screen.getByLabelText("Catalogue status")).toHaveTextContent(
+      "Verified snapshot in use.",
+    );
+  });
 });

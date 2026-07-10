@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowsClockwise, MapPin } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import type { Cafe } from "../../contracts/cafes";
@@ -52,14 +52,19 @@ export function RoulettePage(props: RoulettePageProps) {
   const { cafe, state } = props;
   const navigate = useNavigate();
   const [rerollRequested, setRerollRequested] = useState(false);
+  const rerollLatchRef = useRef(false);
   const rerollPending = rerollRequested;
   const catalogueParams = buildCatalogueParams(state);
   const filters = activeFilters(state);
 
-  useEffect(() => setRerollRequested(false), [props.seed]);
+  useEffect(() => {
+    rerollLatchRef.current = false;
+    setRerollRequested(false);
+  }, [props.seed]);
 
   const reroll = () => {
-    if (rerollPending) return;
+    if (rerollLatchRef.current) return;
+    rerollLatchRef.current = true;
     setRerollRequested(true);
     const params = buildRouletteParams(state, freshSeed(), cafe?.id);
     void navigate(pathWithParams("/roulette", params));
@@ -97,13 +102,15 @@ export function RoulettePage(props: RoulettePageProps) {
             {rerollPending ? "Choosing another café." : `Selected ${cafe.name}.`}
           </p>
           <article className="roulette-reveal" aria-busy={rerollPending}>
-          <p className="section-number">Today’s pick</p>
-          <div className="roulette-reveal__identity">
-            <p>{locationLabel(cafe)}</p>
-            <h2>{cafe.name}</h2>
-          </div>
-          <p className="roulette-reveal__reason">{cafe.recommendation}</p>
-          <div className="roulette-actions">
+            <div className="roulette-reveal__result" key={`${cafe.id}-${props.seed}`}>
+              <p className="section-number">Today’s pick</p>
+              <div className="roulette-reveal__identity">
+                <p>{locationLabel(cafe)}</p>
+                <h2>{cafe.name}</h2>
+              </div>
+              <p className="roulette-reveal__reason">{cafe.recommendation}</p>
+            </div>
+            <div className="roulette-actions">
             <a className="action-link" href={`/cafes/${cafe.slug}`}>
               See café details
               <ArrowRight size={18} aria-hidden="true" />
@@ -122,12 +129,12 @@ export function RoulettePage(props: RoulettePageProps) {
               type="button"
               className="text-link"
               onClick={reroll}
-              disabled={rerollPending}
+              aria-disabled={rerollPending}
             >
               <ArrowsClockwise size={18} aria-hidden="true" />
               {rerollPending ? "Choosing…" : "Reroll"}
             </button>
-          </div>
+            </div>
           </article>
         </>
       ) : (

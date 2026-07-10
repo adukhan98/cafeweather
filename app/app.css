@@ -1424,6 +1424,11 @@ h6 {
   display: grid;
   gap: var(--space-xl);
   padding: var(--space-xl) 0 var(--space-2xl);
+}
+
+.roulette-reveal__result {
+  display: grid;
+  gap: var(--space-xl);
   transform: translateY(var(--space-sm));
   opacity: 0;
   animation: roulette-reveal var(--dur-long) var(--ease-out) forwards;
@@ -1514,6 +1519,14 @@ h6 {
   .roulette-reveal {
     grid-template-columns: minmax(6rem, 0.25fr) minmax(0, 1.05fr) minmax(18rem, 0.7fr);
     align-items: end;
+  }
+
+  .roulette-reveal__result {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(6rem, 0.25fr) minmax(0, 1.05fr) minmax(18rem, 0.7fr);
+    align-items: end;
+    gap: var(--space-xl);
   }
 
   .roulette-reveal .roulette-actions {
@@ -1798,11 +1811,12 @@ h6 {
   .collection-rail,
   .neighborhood-index,
   .catalogue-page > *,
-  .roulette-reveal {
+  .roulette-reveal,
+  .roulette-reveal__result {
     transform: none;
   }
 
-  .roulette-reveal {
+  .roulette-reveal__result {
     animation: none;
     opacity: 1;
   }
