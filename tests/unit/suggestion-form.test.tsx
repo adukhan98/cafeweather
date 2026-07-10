@@ -37,6 +37,43 @@ async function fillCore(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SuggestionForm", () => {
+  it("describes the human check honestly in optional and completed required modes", async () => {
+    const optional = render(
+      <SuggestionForm
+        siteKey={null}
+        turnstileAction="suggestion"
+        turnstileRequired={false}
+        api={api()}
+      />,
+    );
+    expect(screen.getByText("Human check / not required")).toBeVisible();
+    optional.unmount();
+
+    let turnstileOptions: { callback: (token: string) => void } | undefined;
+    Object.assign(window, {
+      turnstile: {
+        render: vi.fn((_element: HTMLElement, options: typeof turnstileOptions) => {
+          turnstileOptions = options;
+          return "widget-status";
+        }),
+        reset: vi.fn(),
+        remove: vi.fn(),
+      },
+    });
+    render(
+      <SuggestionForm
+        siteKey="site-key-public"
+        turnstileAction="suggestion"
+        turnstileRequired
+        api={api()}
+      />,
+    );
+    expect(screen.getByText("Human check / waiting")).toBeVisible();
+    await waitFor(() => expect(turnstileOptions).toBeDefined());
+    act(() => turnstileOptions?.callback("valid-token"));
+    expect(screen.getByText("Human check / ready")).toBeVisible();
+  });
+
   it("validates on blur with stable helper space and linked field errors", async () => {
     const user = userEvent.setup();
     render(
@@ -133,6 +170,7 @@ describe("SuggestionForm", () => {
     expect(
       await screen.findByText("Thanks. Your suggestion is pending review."),
     ).toBeInTheDocument();
+    expect(screen.getByText("Pending review.")).toHaveAttribute("aria-hidden", "true");
     expect(submitSuggestion.mock.calls[1]?.[0].submissionId).toBe(suggestionId);
     expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(2);
   });

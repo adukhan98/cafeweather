@@ -334,7 +334,9 @@ export function SuggestionForm({
       {success ? (
         <div className="suggestion-form__success" role="status">
           <p>Thanks. Your suggestion is pending review.</p>
-          <strong className="suggestion-form__success-stamp">Pending review.</strong>
+          <strong className="suggestion-form__success-stamp" aria-hidden="true">
+            Pending review.
+          </strong>
           <button
             className="text-button"
             type="button"
@@ -433,7 +435,12 @@ export function SuggestionForm({
         />
 
         <p className="suggestion-form__verification-status">
-          Human check / {verificationPending || verificationUnavailable ? "waiting" : "ready"}
+          Human check /{" "}
+          {!turnstileRequired
+            ? "not required"
+            : verificationPending || verificationUnavailable
+              ? "waiting"
+              : "ready"}
         </p>
 
         <div className="suggestion-form__submit-row">

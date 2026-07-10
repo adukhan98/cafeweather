@@ -127,7 +127,7 @@
 
 .suggestion-field[data-state="error"] input,
 .suggestion-field[data-state="error"] textarea {
-  border-color: var(--color-error);
+  border-color: var(--color-burgundy);
 }
 
 .suggestion-field input:disabled,
@@ -145,7 +145,7 @@
 }
 
 .suggestion-field__help[data-error="true"] {
-  color: var(--color-error);
+  color: var(--color-burgundy);
   font-weight: 600;
 }
 
@@ -221,7 +221,7 @@
 }
 
 .suggestion-form__form-message[data-state="error"] {
-  color: var(--color-error);
+  color: var(--color-burgundy);
   font-weight: 600;
 }
 

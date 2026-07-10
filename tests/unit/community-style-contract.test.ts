@@ -88,7 +88,8 @@ describe("community UI style contract", () => {
     expect(controls).toContain("border: var(--rule-hair) solid var(--color-rule-strong)");
     expect(controls).toContain("outline: var(--rule-strong) solid var(--color-paper)");
     expect(focus).toContain("outline: var(--rule-strong) solid var(--color-focus)");
-    expect(error).toContain("border-color: var(--color-error)");
+    expect(error).toContain("border-color: var(--color-burgundy)");
+    expect(error).not.toContain("var(--color-error)");
     expect(error).not.toMatch(/border-width|padding|height\s*:/);
     expect(disabled).toContain("cursor: not-allowed");
     expect(disabled).toContain("opacity: 0.5");
@@ -116,10 +117,17 @@ describe("community UI style contract", () => {
   });
 
   it("uses token-only invitation materials with explicit form states", () => {
+    expect(contrast(tokenHex("burgundy"), tokenHex("cream"))).toBeGreaterThanOrEqual(4.5);
     expect(communityCss).toContain(".suggest-page[data-tone=\"burgundy\"]");
     expect(communityCss).toContain(".suggestion-form__verification-status");
     expect(communityCss).toContain(".suggestion-form__success-stamp");
     expect(communityCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
     expect(communityCss).not.toMatch(/#[0-9a-f]{3,8}|rgb\(|hsl\(|gradient\(|emoji/gi);
+    expect(communityCss).toMatch(
+      /\.suggestion-field__help\[data-error="true"\]\s*\{[^}]*color: var\(--color-burgundy\)/s,
+    );
+    expect(communityCss).toMatch(
+      /\.suggestion-form__form-message\[data-state="error"\]\s*\{[^}]*color: var\(--color-burgundy\)/s,
+    );
   });
 });
