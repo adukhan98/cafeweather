@@ -174,7 +174,8 @@ export function SuggestionForm({
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [resetNonce, setResetNonce] = useState(0);
-  const [currentSubmissionId, setCurrentSubmissionId] = useState(submissionId);
+  const currentSubmissionId = useRef<string | null>(null);
+  const submissionAttempted = useRef(false);
   const form = useRef<HTMLFormElement>(null);
   const request = useRef<AbortController | undefined>(undefined);
   const mounted = useRef(true);
@@ -195,7 +196,16 @@ export function SuggestionForm({
     );
   }
 
+  function activeSubmissionId(): string {
+    currentSubmissionId.current ??= submissionId();
+    return currentSubmissionId.current;
+  }
+
   function setField(name: keyof Values, value: string) {
+    if (submissionAttempted.current) {
+      currentSubmissionId.current = submissionId();
+      submissionAttempted.current = false;
+    }
     setValues((current) => ({ ...current, [name]: value }));
     if (knownField(name)) {
       setServerErrors((current) => {
@@ -218,6 +228,7 @@ export function SuggestionForm({
       value: values[name],
       "aria-describedby": `suggestion-${name}-help`,
       "aria-invalid": displayedError(name) ? ("true" as const) : undefined,
+      disabled: submitting,
       onBlur: () => setTouched((current) => new Set(current).add(name)),
       onChange: (
         event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -257,6 +268,7 @@ export function SuggestionForm({
 
     const controller = new AbortController();
     request.current = controller;
+    submissionAttempted.current = true;
     setSubmitting(true);
     setFormMessage("");
     const input: SuggestionInput = {
@@ -269,7 +281,7 @@ export function SuggestionForm({
         : {}),
       website: values.website,
       ...(token ? { turnstileToken: token } : {}),
-      submissionId: currentSubmissionId,
+      submissionId: activeSubmissionId(),
     };
 
     try {
@@ -279,7 +291,8 @@ export function SuggestionForm({
       setTouched(new Set());
       setServerErrors({});
       setSuccess(true);
-      setCurrentSubmissionId(submissionId());
+      currentSubmissionId.current = submissionId();
+      submissionAttempted.current = false;
     } catch (error) {
       if (
         !mounted.current ||
@@ -400,6 +413,7 @@ export function SuggestionForm({
             value={values.website}
             tabIndex={-1}
             autoComplete="off"
+            disabled={submitting}
             onChange={(event) => setField("website", event.currentTarget.value)}
           />
         </div>

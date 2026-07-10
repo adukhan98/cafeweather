@@ -43,6 +43,14 @@ export class CommunityRepositoryUnavailableError extends Error {
   }
 }
 
+export class SuggestionReplayConflictError extends Error {
+  override readonly name = "SuggestionReplayConflictError";
+
+  constructor() {
+    super("The submission key was already used for different suggestion data.");
+  }
+}
+
 export type RateLimitAttempt = Readonly<{
   keyHash: string;
   action: "reaction" | "suggestion";
@@ -321,7 +329,7 @@ export class D1CommunityRepository implements CommunityRepository {
     suggestion: SuggestionRecord,
   ): Promise<PendingSuggestion> {
     try {
-      await this.db
+      const result = await this.db
         .prepare(
           `INSERT INTO suggestions
             (id, name, address, map_url, reason, recommendation, visitor_hash)
@@ -338,6 +346,37 @@ export class D1CommunityRepository implements CommunityRepository {
           suggestion.visitorHash,
         )
         .run();
+      if (result.meta.changes === 0) {
+        const existing = await this.db
+          .prepare(
+            `SELECT name, address, map_url, reason, recommendation, visitor_hash
+             FROM suggestions
+             WHERE id = ?
+             LIMIT 1`,
+          )
+          .bind(suggestion.id)
+          .first<{
+            name: string;
+            address: string | null;
+            map_url: string | null;
+            reason: string;
+            recommendation: string | null;
+            visitor_hash: string;
+          }>();
+        if (!existing) {
+          throw new Error("A conflicting suggestion row could not be read.");
+        }
+        if (
+          existing.name !== suggestion.name ||
+          existing.address !== (suggestion.address ?? null) ||
+          existing.map_url !== (suggestion.mapUrl ?? null) ||
+          existing.reason !== suggestion.reason ||
+          existing.recommendation !== (suggestion.recommendation ?? null) ||
+          existing.visitor_hash !== suggestion.visitorHash
+        ) {
+          throw new SuggestionReplayConflictError();
+        }
+      }
       return { id: suggestion.id, status: "pending" };
     } catch (error) {
       return communityFailure(error);

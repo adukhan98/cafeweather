@@ -12,6 +12,7 @@ import {
 
 const suggestionId = "a1afaf08-7ef8-44cf-9594-e10f45326b8d";
 const nextSuggestionId = "66493f37-fd4d-44fd-9550-1ef4dddc56b7";
+const thirdSuggestionId = "b3c8f253-7b10-4d7a-9ab8-f92a358dc33e";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -134,6 +135,77 @@ describe("SuggestionForm", () => {
     ).toBeInTheDocument();
     expect(submitSuggestion.mock.calls[1]?.[0].submissionId).toBe(suggestionId);
     expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(2);
+  });
+
+  it("rotates the submission ID after an attempted payload is edited", async () => {
+    vi.spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValueOnce(suggestionId)
+      .mockReturnValueOnce(nextSuggestionId)
+      .mockReturnValueOnce(thirdSuggestionId);
+    const submitSuggestion = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network failure"))
+      .mockResolvedValueOnce({ id: "pending-2", status: "pending" });
+    const user = userEvent.setup();
+    render(
+      <SuggestionForm
+        siteKey={null}
+        turnstileAction="suggestion"
+        turnstileRequired={false}
+        api={api({ submitSuggestion })}
+      />,
+    );
+    await fillCore(user);
+    await user.type(
+      screen.getByLabelText("Street address"),
+      "19 Brock Ave, Toronto, ON",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    expect(
+      await screen.findByText(/could not be sent/i),
+    ).toBeInTheDocument();
+    expect(submitSuggestion.mock.calls[0]?.[0].submissionId).toBe(suggestionId);
+
+    await user.type(
+      screen.getByLabelText("What should someone order or notice?"),
+      "Try the cortado.",
+    );
+    await user.click(screen.getByRole("button", { name: "Send for review" }));
+
+    expect(submitSuggestion.mock.calls[1]?.[0].submissionId).toBe(
+      nextSuggestionId,
+    );
+  });
+
+  it("disables every editable field while a submission is in flight", async () => {
+    const submitSuggestion = vi.fn(() => new Promise<never>(() => undefined));
+    const user = userEvent.setup();
+    render(
+      <SuggestionForm
+        siteKey={null}
+        turnstileAction="suggestion"
+        turnstileRequired={false}
+        api={api({ submitSuggestion })}
+      />,
+    );
+    await fillCore(user);
+    await user.type(
+      screen.getByLabelText("Street address"),
+      "19 Brock Ave, Toronto, ON",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Send for review" }));
+
+    expect(screen.getByLabelText("Café name")).toBeDisabled();
+    expect(screen.getByLabelText("Street address")).toBeDisabled();
+    expect(screen.getByLabelText("HTTPS map link")).toBeDisabled();
+    expect(
+      screen.getByLabelText("Why should it be in the guide?"),
+    ).toBeDisabled();
+    expect(
+      screen.getByLabelText("What should someone order or notice?"),
+    ).toBeDisabled();
   });
 
   it("shows rate-limit recovery, preserves inputs, and resets Turnstile after the attempt", async () => {

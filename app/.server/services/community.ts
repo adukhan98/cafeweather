@@ -1,5 +1,6 @@
 import {
   CommunityRepositoryUnavailableError,
+  SuggestionReplayConflictError,
   type CommunityRepository,
   type RateLimitAttempt,
   type SuggestionRecord,
@@ -258,6 +259,19 @@ export class CommunityService {
   }
 
   async createSuggestion(suggestion: SuggestionRecord) {
-    return this.write(() => this.available().createSuggestion(suggestion));
+    try {
+      return await this.write(() =>
+        this.available().createSuggestion(suggestion),
+      );
+    } catch (error) {
+      if (error instanceof SuggestionReplayConflictError) {
+        throw new HttpError(
+          409,
+          "suggestion_conflict",
+          "This retry key was already used for different suggestion details.",
+        );
+      }
+      throw error;
+    }
   }
 }

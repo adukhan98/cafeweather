@@ -430,21 +430,52 @@ describe("initial D1 migration", () => {
             "content-type": "application/json",
             cookie: first.headers.get("set-cookie") ?? "",
           },
-          body,
+          body: JSON.stringify({
+            name: "  Replay Cafe  ",
+            address: "  100 Queen Street West, Toronto  ",
+            mapUrl: "   ",
+            reason: "  A recommendation retried with one submission UUID.  ",
+            recommendation: "   ",
+            submissionId: rawSubmissionId,
+          }),
+        }),
+      );
+      const conflictingReplay = await handler(
+        new Request(`${origin}/api/v1/suggestions`, {
+          method: "POST",
+          headers: {
+            origin,
+            "content-type": "application/json",
+            cookie: first.headers.get("set-cookie") ?? "",
+          },
+          body: JSON.stringify({
+            name: "Replay Cafe",
+            address: "100 Queen Street West, Toronto",
+            reason: "A different recommendation using the same submission UUID.",
+            submissionId: rawSubmissionId,
+          }),
         }),
       );
       const firstBody = await first.json();
       const replayBody = await replay.json();
+      const conflictBody = await conflictingReplay.json();
 
       expect(first.status).toBe(202);
       expect(replay.status).toBe(202);
       expect(replayBody).toEqual(firstBody);
+      expect(conflictingReplay.status).toBe(409);
+      expect(conflictBody.error.code).toBe("suggestion_conflict");
       expect(firstBody.suggestion.id).toMatch(/^[a-f0-9]{64}$/u);
       expect(
         db.prepare("SELECT count(*) AS count FROM suggestions").get(),
       ).toEqual({ count: 1 });
       expect(JSON.stringify(db.prepare("SELECT * FROM suggestions").all()))
         .not.toContain(rawSubmissionId);
+      expect(
+        db.prepare("SELECT reason FROM suggestions").get(),
+      ).toEqual({
+        reason: "A recommendation retried with one submission UUID.",
+      });
     } finally {
       db.close();
     }
