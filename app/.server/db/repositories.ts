@@ -19,6 +19,10 @@ export interface CatalogueRepository {
   findBySlug(slug: string): Promise<Cafe | null>;
 }
 
+export class CatalogueRepositoryUnavailableError extends Error {
+  override readonly name = "CatalogueRepositoryUnavailableError";
+}
+
 export interface CommunityRepository {
   addReaction(
     cafeId: string,

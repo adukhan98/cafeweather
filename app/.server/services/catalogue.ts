@@ -3,7 +3,10 @@ import type { CafeFilters } from "../../contracts/filters";
 import { cafes as seededCafes } from "../../data/cafes";
 import { filterCafes } from "../../domain/filter-cafes";
 import { selectRouletteCafe } from "../../domain/roulette";
-import type { CatalogueRepository } from "../db/repositories";
+import {
+  CatalogueRepositoryUnavailableError,
+  type CatalogueRepository,
+} from "../db/repositories";
 
 export type CatalogueSource = "d1" | "seed";
 
@@ -14,17 +17,18 @@ export class CatalogueService {
     cafes: readonly Cafe[];
     source: CatalogueSource;
   }> {
-    if (this.repository) {
-      try {
-        const stored = await this.repository.list();
-        if (stored.length >= seededCafes.length) {
-          return { cafes: stored, source: "d1" };
-        }
-      } catch {
-        // A catalogue read failure degrades to the complete checked-in seed.
-      }
+    if (!this.repository) {
+      return { cafes: seededCafes, source: "seed" };
     }
-    return { cafes: seededCafes, source: "seed" };
+
+    try {
+      return { cafes: await this.repository.list(), source: "d1" };
+    } catch (error) {
+      if (error instanceof CatalogueRepositoryUnavailableError) {
+        return { cafes: seededCafes, source: "seed" };
+      }
+      throw error;
+    }
   }
 
   async list(filters: CafeFilters = {}) {
@@ -36,18 +40,27 @@ export class CatalogueService {
   }
 
   async findBySlug(slug: string) {
-    if (this.repository) {
-      try {
-        const cafe = await this.repository.findBySlug(slug);
-        if (cafe) return { cafe, source: "d1" as const };
-      } catch {
-        // Fall through to the seed catalogue.
-      }
+    if (!this.repository) {
+      return {
+        cafe: seededCafes.find((cafe) => cafe.slug === slug) ?? null,
+        source: "seed" as const,
+      };
     }
-    return {
-      cafe: seededCafes.find((cafe) => cafe.slug === slug) ?? null,
-      source: "seed" as const,
-    };
+
+    try {
+      return {
+        cafe: await this.repository.findBySlug(slug),
+        source: "d1" as const,
+      };
+    } catch (error) {
+      if (error instanceof CatalogueRepositoryUnavailableError) {
+        return {
+          cafe: seededCafes.find((cafe) => cafe.slug === slug) ?? null,
+          source: "seed" as const,
+        };
+      }
+      throw error;
+    }
   }
 
   async facets() {

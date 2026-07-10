@@ -75,7 +75,7 @@ describe("Cafe Weather API handlers", () => {
     expect(body.meta.source).toBe("seed");
   });
 
-  it("keeps the complete seed when D1 contains only a partial catalogue", async () => {
+  it("returns an authoritative partial D1 catalogue without adding seed records", async () => {
     const partialRepository = {
       async list() {
         return [cafes[0]];
@@ -89,8 +89,27 @@ describe("Cafe Weather API handlers", () => {
     const response = await request("/api/v1/cafes");
     const body = await response.json();
 
-    expect(body.cafes).toHaveLength(36);
-    expect(body.meta.source).toBe("seed");
+    expect(body.cafes).toEqual([cafes[0]]);
+    expect(body.meta.source).toBe("d1");
+  });
+
+  it("returns 404 when authoritative D1 has no matching detail", async () => {
+    const catalogueRepository = {
+      async list() {
+        return [];
+      },
+      async findBySlug() {
+        return null;
+      },
+    };
+    const { request } = createHarness({ catalogueRepository });
+
+    const response = await request(
+      "/api/v1/cafes/larrys-place-parkdale",
+    );
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error.code).toBe("cafe_not_found");
   });
 
   it("returns sorted facet metadata", async () => {
