@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyleSource } from "../helpers/style-source";
 
-const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
+const css = readStyleSource();
 const tokens = readFileSync(new URL("../../tokens.css", import.meta.url), "utf8");
 const root = readFileSync(new URL("../../app/root.tsx", import.meta.url), "utf8");
 const hallmarkLog = JSON.parse(

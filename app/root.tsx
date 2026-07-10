@@ -8,6 +8,9 @@ import {
 } from "react-router";
 
 import "./app.css";
+import "./styles/base.css";
+import "./styles/materials.css";
+import "./styles/motion.css";
 import "./fonts/latin-wght.css";
 import { AppShell } from "./components/AppShell";
 import { brand } from "./config/brand";

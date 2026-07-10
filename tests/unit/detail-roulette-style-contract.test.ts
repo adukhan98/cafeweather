@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyleSource } from "../helpers/style-source";
 
-const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
+const css = readStyleSource();
 
 describe("detail and roulette interaction styling", () => {
   it("limits roulette reveal motion to transform and opacity", () => {

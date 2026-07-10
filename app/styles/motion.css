@@ -1,0 +1,20 @@
+[data-motion="reveal"] {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out),
+    clip-path var(--dur-short) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="reveal"],
+  .invitation-note,
+  .location-stamp,
+  .place-invitation__actions a,
+  .brand-lockup__name {
+    animation: none;
+    transform: none;
+    transition: opacity var(--dur-micro) linear;
+  }
+}
