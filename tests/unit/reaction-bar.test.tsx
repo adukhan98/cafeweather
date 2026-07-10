@@ -43,7 +43,7 @@ function api(overrides: Partial<CommunityApiClient> = {}): CommunityApiClient {
 }
 
 describe("ReactionBar", () => {
-  it("renders seven ordered 44px-ready buttons disabled until the initial state loads", async () => {
+  it("renders seven ordered coasters disabled until the initial state loads", async () => {
     const load = deferred<typeof loadedReactions>();
     render(
       <ReactionBar
@@ -56,13 +56,20 @@ describe("ReactionBar", () => {
     const initialButtons = within(region).getAllByRole("button");
     expect(initialButtons).toHaveLength(7);
     expect(initialButtons.every((button) => button.hasAttribute("disabled"))).toBe(true);
+    expect(initialButtons.every((button) => button.classList.contains("reaction-coaster"))).toBe(true);
+    expect(initialButtons.every((button) => button.dataset.state === "loading")).toBe(true);
     expect(initialButtons.map((button) => button.textContent)).toEqual(
       reactionKinds.map((kind) => `${reactionLabels[kind]}0`),
     );
 
     load.resolve([...loadedReactions].reverse());
 
-    expect(await within(region).findByRole("button", { name: /Cozy, 1 reaction/i })).toBeEnabled();
+    const cozy = await within(region).findByRole("button", { name: /Cozy, 1 reaction/i });
+    expect(cozy).toBeEnabled();
+    expect(cozy).toHaveAttribute("data-state", "idle");
+    expect(
+      within(region).getByRole("button", { name: /Great coffee, 6 reactions/i }),
+    ).toHaveAttribute("data-state", "active");
     expect(within(region).getAllByRole("button").map((button) => button.textContent)).toEqual(
       reactionKinds.map((kind, index) => `${reactionLabels[kind]}${index + 1}`),
     );

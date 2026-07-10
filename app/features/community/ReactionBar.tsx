@@ -11,6 +11,7 @@ import {
   communityApi,
   type CommunityApiClient,
 } from "../../lib/community-api";
+import { ReactionCoaster } from "./ReactionCoaster";
 
 type FailedMutation = Readonly<{
   desired: boolean;
@@ -58,12 +59,6 @@ function failureCopy(error: unknown): string {
     return error.message;
   }
   return "That reaction could not be saved. Try again.";
-}
-
-function reactionAriaLabel(reaction: ReactionAggregate): string {
-  return `${reactionLabels[reaction.kind]}, ${reaction.count} ${
-    reaction.count === 1 ? "reaction" : "reactions"
-  }`;
 }
 
 export function ReactionBar({
@@ -229,27 +224,15 @@ export function ReactionBar({
         aria-busy={!loaded}
       >
         {reactions.map((reaction) => (
-          <button
+          <ReactionCoaster
             key={reaction.kind}
-            className="reaction-choice"
-            type="button"
-            aria-label={reactionAriaLabel(reaction)}
-            aria-pressed={reaction.active}
-            data-state={
-              pending.has(reaction.kind)
-                ? "loading"
-                : reaction.active
-                  ? "active"
-                  : "idle"
-            }
-            disabled={!loaded || pending.has(reaction.kind)}
-            onClick={() => void mutate(reaction.kind, !reaction.active)}
-          >
-            <span>{reactionLabels[reaction.kind]}</span>
-            <span className="reaction-choice__count" aria-hidden="true">
-              {reaction.count}
-            </span>
-          </button>
+            kind={reaction.kind}
+            label={reactionLabels[reaction.kind]}
+            count={reaction.count}
+            active={reaction.active}
+            pending={!loaded || pending.has(reaction.kind)}
+            onToggle={(kind, nextActive) => void mutate(kind, nextActive)}
+          />
         ))}
       </div>
 

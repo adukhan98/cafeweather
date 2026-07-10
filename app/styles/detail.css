@@ -222,6 +222,74 @@
   color: var(--color-honey);
 }
 
+.reaction-coaster {
+  position: relative;
+  display: inline-grid;
+  width: clamp(calc(var(--target-min) * 1.7), 20vw, calc(var(--target-min) * 2.25));
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  aspect-ratio: 1;
+  padding: var(--space-sm);
+  place-content: center;
+  gap: var(--space-2xs);
+  overflow: hidden;
+  border: var(--rule-hair) solid var(--color-cream);
+  border-radius: 50%;
+  background: var(--color-espresso);
+  color: var(--color-cream);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition:
+    opacity var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out);
+}
+
+.reaction-coaster__label {
+  display: -webkit-box;
+  max-width: 9ch;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-weight: 650;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.reaction-coaster__count {
+  color: inherit;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.reaction-coaster[aria-pressed="true"] {
+  border-color: var(--color-honey);
+  background: var(--color-honey);
+  color: var(--color-espresso);
+}
+
+.reaction-coaster[data-state="loading"] {
+  cursor: wait;
+}
+
+.reaction-coaster[data-state="loading"]::before,
+.reaction-coaster[data-state="loading"]::after {
+  position: absolute;
+  width: 135%;
+  height: var(--rule-hair);
+  background: currentColor;
+  content: "";
+  opacity: 0.38;
+  pointer-events: none;
+  transform: rotate(-24deg);
+}
+
+.reaction-coaster[data-state="loading"]::after {
+  transform: rotate(24deg);
+}
+
 .cafe-detail__community .text-button {
   color: var(--color-cream);
   text-decoration-color: var(--color-honey);
@@ -231,17 +299,13 @@
   color: var(--color-honey);
 }
 
-.cafe-detail__community .reaction-choice:disabled,
+.cafe-detail__community .reaction-coaster:disabled,
 .cafe-detail__community .text-button:disabled {
   opacity: 0.72;
 }
 
 .cafe-detail__community :focus-visible {
   outline-color: var(--color-honey);
-}
-
-.cafe-detail__community .reaction-choice__count {
-  color: inherit;
 }
 
 .cafe-detail a:active {
@@ -274,6 +338,12 @@
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .reaction-coaster:hover:not(:disabled) {
+    transform: rotate(-2deg) scale(1.03);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cafe-detail *,
   .cafe-detail *::before,
@@ -283,7 +353,12 @@
     animation: none;
   }
 
-  .cafe-detail a:active {
+  .cafe-detail a:active,
+  .reaction-coaster:hover:not(:disabled) {
     transform: none;
+  }
+
+  .reaction-coaster {
+    transition: opacity var(--dur-micro) linear;
   }
 }

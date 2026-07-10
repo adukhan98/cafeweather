@@ -27,13 +27,17 @@ function contrast(first: string, second: string) {
 }
 
 describe("community UI style contract", () => {
-  it("keeps reaction and submit controls at the shared 44 pixel target", () => {
-    const reaction = css.match(/\.reaction-choice\s*\{([^}]*)\}/s)?.[1] ?? "";
+  it("keeps circular reaction coasters touch-safe and lets long labels wrap", () => {
+    const reaction = detailCss.match(/\.reaction-coaster\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const label = detailCss.match(/\.reaction-coaster__label\s*\{([^}]*)\}/s)?.[1] ?? "";
     const submit = css.match(/\.suggestion-form__submit-row \.action-button\s*\{([^}]*)\}/s)?.[1] ?? "";
 
     expect(reaction).toContain("min-height: var(--target-min)");
+    expect(reaction).toContain("min-width: var(--target-min)");
+    expect(reaction).toContain("border-radius: 50%");
     expect(submit).toContain("min-height: var(--target-min)");
-    expect(reaction).toContain("white-space: nowrap");
+    expect(label).toContain("-webkit-line-clamp: 2");
+    expect(label).toContain("white-space: normal");
   });
 
   it("gives every dark detail-reaction state a high-contrast token", () => {
@@ -55,8 +59,13 @@ describe("community UI style contract", () => {
       /\.cafe-detail__community :focus-visible\s*\{[^}]*outline-color: var\(--color-honey\)/,
     );
     expect(detailCss).toMatch(
-      /\.cafe-detail__community \.reaction-choice:disabled,[\s\S]*\.cafe-detail__community \.text-button:disabled\s*\{[^}]*opacity: 0\.72/,
+      /\.cafe-detail__community \.reaction-coaster:disabled,[\s\S]*\.cafe-detail__community \.text-button:disabled\s*\{[^}]*opacity: 0\.72/,
     );
+    expect(detailCss).toMatch(
+      /\.reaction-coaster\[aria-pressed="true"\]\s*\{[^}]*background: var\(--color-honey\);[^}]*color: var\(--color-espresso\)/s,
+    );
+    expect(detailCss).toMatch(/\.reaction-coaster\[data-state="loading"\]::before/);
+    expect(detailCss).not.toMatch(/gradient\(/i);
   });
 
   it("keeps field geometry stable across default, focus, and error states", () => {

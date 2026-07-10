@@ -1518,45 +1518,6 @@ h6 {
   gap: var(--space-xs);
 }
 
-.reaction-choice {
-  display: inline-grid;
-  max-width: 100%;
-  min-height: var(--target-min);
-  padding: var(--space-xs) var(--space-sm);
-  grid-template-columns: minmax(0, auto) auto;
-  align-items: center;
-  gap: var(--space-sm);
-  border: var(--rule-hair) solid var(--color-rule-strong);
-  border-radius: var(--radius-none);
-  background: var(--color-paper);
-  color: var(--color-ink);
-  cursor: pointer;
-  font-weight: 600;
-  white-space: nowrap;
-  transition:
-    background-color var(--dur-short) var(--ease-out),
-    color var(--dur-short) var(--ease-out),
-    transform var(--dur-micro) var(--ease-out);
-}
-
-.reaction-choice[aria-pressed="true"] {
-  border-color: var(--color-accent);
-  background: var(--color-paper-2);
-  color: var(--color-accent-hover);
-  box-shadow: inset 0 calc(-1 * var(--rule-strong)) 0 var(--color-accent);
-}
-
-.reaction-choice[data-state="loading"] {
-  cursor: wait;
-}
-
-.reaction-choice__count {
-  min-width: 2ch;
-  color: inherit;
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-}
-
 .reaction-bar__error {
   display: flex;
   align-items: center;
@@ -1922,11 +1883,6 @@ h6 {
     border-color: var(--color-accent-hover);
     background: var(--color-accent-hover);
     color: var(--color-accent-ink);
-  }
-
-  .reaction-choice:hover {
-    background: var(--color-paper-2);
-    color: var(--color-accent-hover);
   }
 
   .text-button:hover {
