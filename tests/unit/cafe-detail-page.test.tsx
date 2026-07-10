@@ -2,6 +2,7 @@
 
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import axe from "axe-core";
 
 import { reactionKinds } from "../../app/contracts/community";
 import { cafes } from "../../app/data/cafes";
@@ -34,7 +35,10 @@ describe("CafeDetailPage", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Larry's Place" })).toBeInTheDocument();
     expect(screen.getByText("Parkdale", { selector: ".cafe-detail__branch" })).toBeInTheDocument();
-    expect(screen.getByText("1390 Queen St W, Toronto, ON")).toBeInTheDocument();
+    expect(
+      screen.getByText("Meet me at 1390 Queen St W.", { selector: "address" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("1390 Queen St W, Toronto, ON")).not.toBeInTheDocument();
     expect(screen.getByText(larrys.recommendation)).toBeInTheDocument();
     expect(screen.getByText("July 9, 2026")).toBeInTheDocument();
 
@@ -53,7 +57,9 @@ describe("CafeDetailPage", () => {
     render(<CafeDetailPage cafe={matcha} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "MATCHA MATCHA" })).toBeInTheDocument();
-    expect(screen.getByText("Meet me at 407 Church Street.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Meet me at 407 Church Street.", { selector: "address" }),
+    ).toBeInTheDocument();
     for (const heading of [
       "Why meet here?",
       "What should we order or notice?",
@@ -116,6 +122,23 @@ describe("CafeDetailPage", () => {
 
     expect(boundary).toHaveAttribute("id", "community-reactions");
     expect(boundary).toHaveAttribute("aria-labelledby", "community-reactions-title");
+  });
+
+  it("has no detectable structural accessibility violations", async () => {
+    const { container } = render(
+      <CafeDetailPage
+        cafe={cafe("matcha-matcha-church-street")}
+        reactionBar={<p>Community reactions ready.</p>}
+      />,
+    );
+
+    const results = await axe.run(container, {
+      rules: {
+        // jsdom does not provide layout or computed-color data; token contrast is tested separately.
+        "color-contrast": { enabled: false },
+      },
+    });
+    expect(results.violations).toEqual([]);
   });
 
   it("renders the live reaction bar by café slug at the existing boundary", async () => {

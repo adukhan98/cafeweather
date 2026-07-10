@@ -210,7 +210,38 @@
 }
 
 .cafe-detail__community .reaction-bar {
-  color: var(--color-espresso);
+  color: var(--color-cream);
+}
+
+.cafe-detail__community .reaction-bar__intro,
+.cafe-detail__community .reaction-bar__live {
+  color: var(--color-cream);
+}
+
+.cafe-detail__community .reaction-bar__error {
+  color: var(--color-honey);
+}
+
+.cafe-detail__community .text-button {
+  color: var(--color-cream);
+  text-decoration-color: var(--color-honey);
+}
+
+.cafe-detail__community .text-button:hover {
+  color: var(--color-honey);
+}
+
+.cafe-detail__community .reaction-choice:disabled,
+.cafe-detail__community .text-button:disabled {
+  opacity: 0.72;
+}
+
+.cafe-detail__community :focus-visible {
+  outline-color: var(--color-honey);
+}
+
+.cafe-detail__community .reaction-choice__count {
+  color: inherit;
 }
 
 .cafe-detail a:active {

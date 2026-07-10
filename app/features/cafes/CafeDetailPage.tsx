@@ -71,7 +71,6 @@ export function CafeDetailPage({
           <address className="cafe-detail__invitation">
             Meet me at {invitationAddress(cafe.address)}.
           </address>
-          <p className="visually-hidden">{cafe.address}</p>
           <a
             className="cafe-detail__directions"
             href={cafe.mapsUrl}

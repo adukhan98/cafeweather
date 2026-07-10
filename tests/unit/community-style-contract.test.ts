@@ -2,7 +2,29 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
+const detailCss = readFileSync(
+  new URL("../../app/styles/detail.css", import.meta.url),
+  "utf8",
+);
 const tokens = readFileSync(new URL("../../tokens.css", import.meta.url), "utf8");
+
+function tokenHex(name: string) {
+  const value = tokens.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6})`, "i"))?.[1];
+  if (!value) throw new Error(`Missing concrete color token: ${name}`);
+  return value;
+}
+
+function contrast(first: string, second: string) {
+  const luminance = (hex: string) => {
+    const channels = hex.slice(1).match(/.{2}/g)!.map((channel) => {
+      const value = Number.parseInt(channel, 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const [light, dark] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+}
 
 describe("community UI style contract", () => {
   it("keeps reaction and submit controls at the shared 44 pixel target", () => {
@@ -12,6 +34,29 @@ describe("community UI style contract", () => {
     expect(reaction).toContain("min-height: var(--target-min)");
     expect(submit).toContain("min-height: var(--target-min)");
     expect(reaction).toContain("white-space: nowrap");
+  });
+
+  it("gives every dark detail-reaction state a high-contrast token", () => {
+    const espresso = tokenHex("espresso");
+    for (const foreground of ["cream", "honey", "clay"]) {
+      expect(contrast(tokenHex(foreground), espresso)).toBeGreaterThanOrEqual(4.5);
+    }
+
+    expect(detailCss).toMatch(
+      /\.cafe-detail__community \.reaction-bar__intro,[\s\S]*\.cafe-detail__community \.reaction-bar__live\s*\{[^}]*color: var\(--color-cream\)/,
+    );
+    expect(detailCss).toMatch(
+      /\.cafe-detail__community \.reaction-bar__error\s*\{[^}]*color: var\(--color-honey\)/,
+    );
+    expect(detailCss).toMatch(
+      /\.cafe-detail__community \.text-button\s*\{[^}]*color: var\(--color-cream\);[^}]*text-decoration-color: var\(--color-honey\)/,
+    );
+    expect(detailCss).toMatch(
+      /\.cafe-detail__community :focus-visible\s*\{[^}]*outline-color: var\(--color-honey\)/,
+    );
+    expect(detailCss).toMatch(
+      /\.cafe-detail__community \.reaction-choice:disabled,[\s\S]*\.cafe-detail__community \.text-button:disabled\s*\{[^}]*opacity: 0\.72/,
+    );
   });
 
   it("keeps field geometry stable across default, focus, and error states", () => {
