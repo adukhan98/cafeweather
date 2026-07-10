@@ -115,6 +115,11 @@
 
 .cafe-detail .section-number {
   margin: 0 0 var(--space-sm);
+  color: var(--color-espresso);
+}
+
+.cafe-detail__community .section-number {
+  color: var(--color-cream);
 }
 
 .cafe-detail__why {
@@ -361,4 +366,18 @@
   .reaction-coaster {
     transition: opacity var(--dur-micro) linear;
   }
+}
+
+@container app-shell (max-width: 46rem) {
+.cafe-detail__nearby-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+.cafe-detail__nearby-list > li,
+.cafe-detail__nearby-list .place-invitation {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(100vw - (var(--page-gutter) * 2));
+  min-width: 0;
+  transform: none;
+}
 }

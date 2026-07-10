@@ -12,9 +12,12 @@ const catalogueCss = readFileSync(
 const hallmarkLog = JSON.parse(
   readFileSync(new URL("../../.hallmark/log.json", import.meta.url), "utf8"),
 ) as Array<{
+  artifact?: string;
+  date?: string;
   design_taste?: { variance: number; motion: number; density: number };
   enrichment?: string;
   macrostructure?: string;
+  theme?: string;
 }>;
 
 function declarationsFor(selector: string) {
@@ -55,6 +58,12 @@ describe("Meet Me There design-system contract", () => {
       macrostructure: "Invitation City",
       enrichment: "code-native illustration plus MapLibre",
     });
+    expect(hallmarkLog[0]).toMatchObject({
+      date: "2026-07-10",
+      theme: "custom",
+    });
+    expect(hallmarkLog.length).toBeGreaterThan(1);
+    expect(hallmarkLog.length).toBeLessThanOrEqual(20);
   });
 
   it("starts the spacing scale at four pixels", () => {
@@ -127,5 +136,30 @@ describe("Meet Me There design-system contract", () => {
     );
     expect(catalogueCss).toContain(".view-switch { display: none; }");
     expect(catalogueCss).toContain(".catalogue-page .cafe-row");
+  });
+
+  it("resets catalogue fieldsets and replaces native radio presentation", () => {
+    expect(catalogueCss).toMatch(
+      /\.facet-disclosure fieldset,[\s\S]*?\.view-switch\s*\{[^}]*margin:\s*0;[^}]*padding:\s*0;[^}]*border:\s*0;/,
+    );
+    expect(catalogueCss).toMatch(/\.view-switch input\s*\{[^}]*opacity:\s*0;/s);
+    expect(catalogueCss).toMatch(/\.view-switch label:has\(input:checked\)/);
+    expect(catalogueCss).toMatch(/\.view-switch label:has\(input:focus-visible\)/);
+    expect(catalogueCss).toMatch(/\.active-filters li > button\s*\{[^}]*min-width:\s*var\(--target-min\)/s);
+  });
+
+  it("keeps every live catalogue and recovery control selector styled", () => {
+    for (const selector of [
+      ".facet-disclosure fieldset",
+      ".facet-disclosure legend",
+      ".active-filters__head",
+      ".active-filters__note",
+      ".active-filters li > button",
+      ".view-switch label",
+      ".view-switch input",
+      ".not-found-page__actions",
+    ]) {
+      expect(css, `missing live selector ${selector}`).toContain(selector);
+    }
   });
 });

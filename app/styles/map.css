@@ -223,13 +223,41 @@
 }
 
 @media (max-width: 34rem) {
-  .cafe-map { padding: var(--space-xs); box-shadow: var(--space-xs) var(--space-xs) 0 var(--color-burgundy); }
+  .map-scene .cafe-map,
+  .catalogue-page .cafe-map { width: 100%; max-width: 100%; padding: 0; box-shadow: none; }
+  .cafe-map > * { box-sizing: border-box; width: auto; max-width: 100%; min-width: 0; }
   .cafe-map__canvas-wrap { min-height: 27rem; }
-  .cafe-map__selected { width: calc(100% - (var(--space-md) * 2)); margin-inline: auto; }
+  .cafe-map__selected { width: 100%; margin-inline: 0; transform: none; }
+  .cafe-map__selected * { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .cafe-map__selected-stamp { width: 100%; white-space: normal; }
   .cafe-map__selected-actions { display: grid; }
   .cafe-map__selected-actions a { width: 100%; }
-  .cafe-map__index li { grid-template-columns: minmax(0, 1fr) auto; }
+  .cafe-map__index li { grid-template-columns: minmax(0, 1fr); }
+  .cafe-map__index button,
+  .cafe-map__index li > a { width: 100%; min-width: 0; }
+  .cafe-map__index button span { overflow-wrap: anywhere; white-space: normal; }
   .cafe-map__index li > a:first-of-type { display: none; }
+}
+
+@container app-shell (max-width: 46rem) {
+.cafe-map {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  box-shadow: none;
+}
+.cafe-map > * { box-sizing: border-box; width: auto; max-width: 100%; min-width: 0; }
+.cafe-map__selected { width: 100%; margin-inline: 0; transform: none; }
+.cafe-map__selected * { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.cafe-map__selected-stamp { width: 100%; white-space: normal; }
+.cafe-map__selected-actions { display: grid; }
+.cafe-map__selected-actions a { width: 100%; }
+.cafe-map__index ul { grid-template-columns: minmax(0, 1fr); }
+.cafe-map__index li { grid-template-columns: minmax(0, 1fr); }
+.cafe-map__index button,
+.cafe-map__index li > a { width: 100%; min-width: 0; }
+.cafe-map__index button span { overflow-wrap: anywhere; white-space: normal; }
+.cafe-map__index li > a:first-of-type { display: none; }
 }
 
 @media (min-width: 60rem) {

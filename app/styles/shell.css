@@ -10,6 +10,8 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--color-cream);
   overflow-x: clip;
+  container-name: app-shell;
+  container-type: inline-size;
 }
 
 .skip-link {
@@ -385,6 +387,28 @@
   .site-footer__links a:hover {
     color: var(--color-terracotta);
   }
+}
+
+@media (max-width: 34rem) {
+  .masthead .brand-lockup__home {
+    font-size: min(var(--text-lg), 7vw);
+  }
+}
+
+@container app-shell (max-width: 46rem) {
+.masthead .brand-lockup__home {
+  font-size: min(var(--text-lg), 7vw);
+  white-space: normal;
+}
+
+.masthead__desktop-nav { display: none; }
+.site-nav__toggle { display: grid; }
+.site-footer { grid-template-columns: minmax(0, 1fr); }
+.site-footer__links { justify-content: start; }
+.site-footer__provenance {
+  grid-column: auto;
+  flex-direction: column;
+}
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -348,3 +348,43 @@
     transform: none;
   }
 }
+
+@container app-shell (max-width: 46rem) {
+  .suggest-page__body,
+  .suggestion-form__location {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .suggest-page__notes,
+  .suggestion-form,
+  .suggestion-form-shell {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: calc(100vw - (var(--page-gutter) * 2));
+    margin-inline: 0;
+    transform: none;
+  }
+  .suggest-page .invitation-note,
+  .suggestion-form.form-note {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: calc(100vw - (var(--page-gutter) * 2));
+    margin-inline: 0;
+    transform: none;
+  }
+  .suggest-page .invitation-note > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .suggestion-form * {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .suggestion-form__honeypot {
+    width: var(--rule-hair);
+    max-width: var(--rule-hair);
+  }
+}

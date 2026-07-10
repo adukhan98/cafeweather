@@ -29,15 +29,24 @@ test("core pages have no serious accessibility violations", async ({ page }) => 
   }
 });
 
-test("every launch viewport avoids overflow and wrapped clickable labels", async ({ page }) => {
+test("every launch viewport avoids overflow at normal and 200 percent zoom", async ({ page }) => {
   for (const route of routes) {
     for (const width of widths) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(route, { waitUntil: "domcontentloaded" });
       await assertAppShellGeometry(page, width);
+    }
+  }
+});
+
+test("clickable labels stay legible without flattening intentional coaster copy", async ({ page }) => {
+  for (const route of routes) {
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto(route, { waitUntil: "domcontentloaded" });
       const failures = await page.evaluate(() => {
         const selectors =
-          ".action-link, .text-link, .text-button, .reset-button, .masthead a, .site-footer a, .view-switch label, .reaction-coaster, .suggestion-form button, summary";
+          ".action-link, .text-link, .text-button, .reset-button, .masthead a, .site-footer a, .view-switch label, .suggestion-form button, summary";
         return Array.from(document.querySelectorAll<HTMLElement>(selectors))
           .filter((element) => {
             const style = getComputedStyle(element);
@@ -66,6 +75,25 @@ test("every launch viewport avoids overflow and wrapped clickable labels", async
   }
 });
 
+test("catalogue fieldsets and view radios use the custom control geometry", async ({ page }) => {
+  await page.setViewportSize({ width: 414, height: 800 });
+  await page.goto("/cafes", { waitUntil: "domcontentloaded" });
+
+  const fieldset = page.locator(".facet-disclosure fieldset").first();
+  const fieldsetStyle = await fieldset.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { border: style.borderTopWidth, margin: style.marginTop, paddingInline: style.paddingInline };
+  });
+  expect(fieldsetStyle).toEqual({ border: "0px", margin: "0px", paddingInline: "0px" });
+
+  const radio = page.locator(".view-switch input").first();
+  await expect(radio).toHaveCSS("opacity", "0");
+  const labels = page.locator(".view-switch label");
+  await expect(labels.first()).toHaveCSS("min-height", "44px");
+  await radio.focus();
+  await expect(labels.first()).toHaveCSS("outline-style", "solid");
+});
+
 test("mobile navigation is keyboard operable and reduced motion is honored", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -85,7 +113,7 @@ test("mobile navigation is keyboard operable and reduced motion is honored", asy
   await expect(page.getByRole("navigation", { name: "Mobile" })).toBeHidden();
 
   await page.goto("/roulette?mood=cozy");
-  const reduced = await page.locator(".roulette-reveal__result").evaluate((reveal) => {
+  const reduced = await page.locator(".roulette-result").evaluate((reveal) => {
     const style = getComputedStyle(reveal);
     return { animationName: style.animationName, transform: style.transform };
   });

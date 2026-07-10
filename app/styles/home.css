@@ -381,3 +381,43 @@
     animation: none;
   }
 }
+
+@media (max-width: 34rem) {
+  .home-hero__copy,
+  .home-search,
+  .mood-scene__picker,
+  .scene-heading,
+  .map-scene__map,
+  .roulette-scene__copy,
+  .neighborhood-roll,
+  .suggestion-scene .invitation-note {
+    width: 100%;
+    max-width: calc(100vw - (var(--page-gutter) * 2));
+  }
+  .home-hero__ring,
+  .roulette-scene__ring { display: none; }
+}
+
+@container app-shell (max-width: 46rem) {
+.home-hero,
+.mood-scene,
+.map-scene,
+.neighborhood-scene {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.home-hero__copy,
+.home-search,
+.mood-scene__picker,
+.scene-heading,
+.map-scene__map,
+.roulette-scene__copy,
+.neighborhood-roll,
+.suggestion-scene .invitation-note {
+  width: 100%;
+  max-width: calc(100vw - (var(--page-gutter) * 2));
+}
+
+.home-hero__ring,
+.roulette-scene__ring { display: none; }
+}

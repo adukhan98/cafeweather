@@ -22,6 +22,7 @@ export async function assertAppShellGeometry(page, width, height = 800) {
       const rect = element.getBoundingClientRect();
       const style = window.getComputedStyle(element);
       const visible =
+        !element.closest('[aria-hidden="true"]') &&
         style.display !== "none" &&
         style.visibility !== "hidden" &&
         style.opacity !== "0" &&
@@ -62,43 +63,46 @@ export async function assertAppShellGeometry(page, width, height = 800) {
     };
   });
 
-  const result = await measure();
-
-  if (!result.noOverflow) {
-    throw new Error(
-      `Horizontal overflow at ${width}px: ${JSON.stringify(result.overflowingChildren)}`,
-    );
-  }
-  if (!result.wordmarkVisible) throw new Error(`Wordmark hidden at ${width}px`);
-  if (result.undersizedTargets.length > 0) {
-    throw new Error(
-      `Targets below 44px at ${width}px: ${result.undersizedTargets
+  const assertGeometry = (result, context) => {
+    if (!result.noOverflow || result.overflowingChildren.length > 0) {
+      throw new Error(
+        `Horizontal overflow at ${context}: ${JSON.stringify(result.overflowingChildren)}`,
+      );
+    }
+    if (!result.wordmarkVisible) throw new Error(`Wordmark hidden at ${context}`);
+    if (result.undersizedTargets.length > 0) {
+      throw new Error(
+        `Targets below 44px at ${context}: ${result.undersizedTargets
         .map(({ label, width: targetWidth, height: targetHeight }) =>
           `${label} (${targetWidth}x${targetHeight})`)
         .join(", ")}`,
-    );
-  }
-  if (result.wordmarkHeight < 44) {
-    throw new Error(`Wordmark target below 44px at ${width}px`);
-  }
-  if (result.mobile) {
-    if (!result.toggleVisible) throw new Error(`Menu toggle hidden at ${width}px`);
-    if (result.toggleHeight < 44) throw new Error(`Menu target below 44px at ${width}px`);
-    if (result.controlsOverlap) throw new Error(`Wordmark overlaps menu at ${width}px`);
+      );
+    }
+    if (result.wordmarkHeight < 44) {
+      throw new Error(`Wordmark target below 44px at ${context}`);
+    }
+    if (result.mobile) {
+      if (!result.toggleVisible) throw new Error(`Menu toggle hidden at ${context}`);
+      if (result.toggleHeight < 44) throw new Error(`Menu target below 44px at ${context}`);
+      if (result.controlsOverlap) throw new Error(`Wordmark overlaps menu at ${context}`);
+    }
+  };
+
+  const result = await measure();
+  assertGeometry(result, `${width}px`);
+
+  let zoomedResult;
+  try {
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "200%";
+    });
+    zoomedResult = await measure();
+    assertGeometry(zoomedResult, `${width}px and 200% zoom`);
+  } finally {
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "";
+    });
   }
 
-  await page.evaluate(() => {
-    document.documentElement.style.fontSize = "200%";
-  });
-  const zoomedResult = await measure();
-  await page.evaluate(() => {
-    document.documentElement.style.fontSize = "";
-  });
-
-  if (!zoomedResult.noOverflow) {
-    throw new Error(
-      `Horizontal overflow at ${width}px and 200% zoom: ${JSON.stringify(zoomedResult.overflowingChildren)}`,
-    );
-  }
   return { normal: result, zoomed: zoomedResult };
 }

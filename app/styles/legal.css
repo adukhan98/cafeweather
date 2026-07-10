@@ -67,6 +67,18 @@
   font-weight: 700;
 }
 
+.not-found-page__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.not-found-page__actions a {
+  min-height: var(--target-min);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .data-source-notice { transform: none; }
 }

@@ -74,6 +74,8 @@
 .invitation-note,
 .place-invitation {
   position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
   width: min(100%, 36rem);
   padding: clamp(var(--space-lg), 4vw, var(--space-xl));
   border: var(--rule-hair) solid var(--color-rule);
@@ -176,6 +178,24 @@
 }
 
 @media (max-width: 34rem) {
+  .scene > *:not([data-horizontal-rail="true"]) {
+    min-width: 0;
+    max-width: calc(100vw - (var(--page-gutter) * 2));
+  }
+  .invitation-note,
+  .location-stamp { transform: none; }
   .place-invitation__actions { display: grid; }
   .place-invitation__actions a { width: 100%; }
+}
+
+@container app-shell (max-width: 46rem) {
+.scene > *:not([data-horizontal-rail="true"]) {
+  min-width: 0;
+  max-width: calc(100vw - (var(--page-gutter) * 2));
+}
+
+.invitation-note,
+.location-stamp {
+  transform: none;
+}
 }
