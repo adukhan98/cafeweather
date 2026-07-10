@@ -27,6 +27,21 @@ async function hmac(secret: string, value: string): Promise<Uint8Array> {
   );
 }
 
+export function constantTimeEqual(left: string, right: string): boolean {
+  const length = Math.max(left.length, right.length);
+  let mismatch = left.length ^ right.length;
+  for (let index = 0; index < length; index += 1) {
+    mismatch |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
+  }
+  return mismatch === 0;
+}
+
+export async function hmacHex(secret: string, value: string): Promise<string> {
+  return Array.from(await hmac(secret, value), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
 function parseCookie(request: Request): string | undefined {
   const cookie = request.headers.get("cookie") ?? "";
   return cookie
@@ -44,7 +59,7 @@ async function isValidSignedId(
   const id = signedId.slice(0, separator);
   const supplied = signedId.slice(separator + 1);
   const expected = base64Url(await hmac(secret, `cookie:${id}`));
-  return supplied === expected ? id : null;
+  return constantTimeEqual(supplied, expected) ? id : null;
 }
 
 function randomId(): string {
@@ -60,16 +75,14 @@ export async function getVisitorIdentity(
   const validId = existing ? await isValidSignedId(existing, secret) : null;
   const id = validId ?? randomId();
   const signature = base64Url(await hmac(secret, `cookie:${id}`));
-  const visitorHash = Array.from(await hmac(secret, `visitor:${id}`), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
+  const visitorHash = await hmacHex(secret, `visitor:${id}`);
 
   return {
     visitorHash,
     ...(!validId
       ? {
           setCookie: `${COOKIE_NAME}=${id}.${signature}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`,
-    }
+        }
       : {}),
   };
 }

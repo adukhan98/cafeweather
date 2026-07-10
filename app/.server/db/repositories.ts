@@ -21,7 +21,34 @@ export interface CatalogueRepository {
 
 export class CatalogueRepositoryUnavailableError extends Error {
   override readonly name = "CatalogueRepositoryUnavailableError";
+
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+  }
 }
+
+export class CommunityRepositoryUnavailableError extends Error {
+  override readonly name = "CommunityRepositoryUnavailableError";
+
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+  }
+}
+
+export type RateLimitAttempt = Readonly<{
+  keyHash: string;
+  action: "reaction" | "suggestion";
+  bucket: number;
+  limit: number;
+  now: number;
+  expiresAt: number;
+}>;
+
+export type RateLimitResult = Readonly<{
+  allowed: boolean;
+  count: number;
+  retryAfterSeconds: number;
+}>;
 
 export interface CommunityRepository {
   addReaction(
@@ -35,6 +62,49 @@ export interface CommunityRepository {
     kind: string,
   ): Promise<boolean>;
   createSuggestion(suggestion: SuggestionRecord): Promise<PendingSuggestion>;
+  consumeRateLimit(attempt: RateLimitAttempt): Promise<RateLimitResult>;
+}
+
+const AVAILABILITY_CODES = new Set([
+  "D1_UNAVAILABLE",
+  "D1_TIMEOUT",
+  "EAI_AGAIN",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "UND_ERR_CONNECT_TIMEOUT",
+]);
+
+function isKnownAvailabilityFailure(error: unknown): error is Error {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: unknown }).code;
+  if (typeof code === "string" && AVAILABILITY_CODES.has(code)) return true;
+  if (["AbortError", "NetworkError", "TimeoutError"].includes(error.name)) {
+    return true;
+  }
+  return /\b(?:network (?:error|failure)|service unavailable|temporarily unavailable|timed out|connection (?:refused|reset))\b/iu.test(
+    error.message,
+  );
+}
+
+function catalogueFailure(error: unknown): never {
+  if (isKnownAvailabilityFailure(error)) {
+    throw new CatalogueRepositoryUnavailableError(
+      "The D1 catalogue is temporarily unavailable.",
+      { cause: error },
+    );
+  }
+  throw error;
+}
+
+function communityFailure(error: unknown): never {
+  if (isKnownAvailabilityFailure(error)) {
+    throw new CommunityRepositoryUnavailableError(
+      "The D1 community store is temporarily unavailable.",
+      { cause: error },
+    );
+  }
+  throw error;
 }
 
 type CafeRow = {
@@ -143,18 +213,26 @@ export class D1CatalogueRepository implements CatalogueRepository {
   constructor(private readonly db: D1Database) {}
 
   async list(): Promise<readonly Cafe[]> {
-    const result = await this.db
-      .prepare(`${CAFE_SELECT} WHERE c.published = 1 ORDER BY c.name, c.branch`)
-      .all<CafeRow>();
-    return result.results.map(mapCafeRow);
+    try {
+      const result = await this.db
+        .prepare(`${CAFE_SELECT} WHERE c.published = 1 ORDER BY c.name, c.branch`)
+        .all<CafeRow>();
+      return result.results.map(mapCafeRow);
+    } catch (error) {
+      return catalogueFailure(error);
+    }
   }
 
   async findBySlug(slug: string): Promise<Cafe | null> {
-    const row = await this.db
-      .prepare(`${CAFE_SELECT} WHERE c.slug = ? AND c.published = 1 LIMIT 1`)
-      .bind(slug)
-      .first<CafeRow>();
-    return row ? mapCafeRow(row) : null;
+    try {
+      const row = await this.db
+        .prepare(`${CAFE_SELECT} WHERE c.slug = ? AND c.published = 1 LIMIT 1`)
+        .bind(slug)
+        .first<CafeRow>();
+      return row ? mapCafeRow(row) : null;
+    } catch (error) {
+      return catalogueFailure(error);
+    }
   }
 }
 
@@ -166,15 +244,19 @@ export class D1CommunityRepository implements CommunityRepository {
     visitorHash: string,
     kind: string,
   ): Promise<boolean> {
-    const result = await this.db
-      .prepare(
-        `INSERT INTO reactions (id, cafe_id, visitor_hash, kind)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(cafe_id, visitor_hash, kind) DO NOTHING`,
-      )
-      .bind(crypto.randomUUID(), cafeId, visitorHash, kind)
-      .run();
-    return result.meta.changes > 0;
+    try {
+      const result = await this.db
+        .prepare(
+          `INSERT INTO reactions (id, cafe_id, visitor_hash, kind)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(cafe_id, visitor_hash, kind) DO NOTHING`,
+        )
+        .bind(crypto.randomUUID(), cafeId, visitorHash, kind)
+        .run();
+      return result.meta.changes > 0;
+    } catch (error) {
+      return communityFailure(error);
+    }
   }
 
   async removeReaction(
@@ -182,36 +264,80 @@ export class D1CommunityRepository implements CommunityRepository {
     visitorHash: string,
     kind: string,
   ): Promise<boolean> {
-    const result = await this.db
-      .prepare(
-        `DELETE FROM reactions
-         WHERE cafe_id = ? AND visitor_hash = ? AND kind = ?`,
-      )
-      .bind(cafeId, visitorHash, kind)
-      .run();
-    return result.meta.changes > 0;
+    try {
+      const result = await this.db
+        .prepare(
+          `DELETE FROM reactions
+           WHERE cafe_id = ? AND visitor_hash = ? AND kind = ?`,
+        )
+        .bind(cafeId, visitorHash, kind)
+        .run();
+      return result.meta.changes > 0;
+    } catch (error) {
+      return communityFailure(error);
+    }
   }
 
   async createSuggestion(
     suggestion: SuggestionRecord,
   ): Promise<PendingSuggestion> {
-    const id = crypto.randomUUID();
-    await this.db
-      .prepare(
-        `INSERT INTO suggestions
-          (id, name, address, map_url, reason, recommendation, visitor_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(
-        id,
-        suggestion.name,
-        suggestion.address,
-        suggestion.mapUrl ?? null,
-        suggestion.reason,
-        suggestion.recommendation ?? null,
-        suggestion.visitorHash,
-      )
-      .run();
-    return { id, status: "pending" };
+    try {
+      const id = crypto.randomUUID();
+      await this.db
+        .prepare(
+          `INSERT INTO suggestions
+            (id, name, address, map_url, reason, recommendation, visitor_hash)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          id,
+          suggestion.name,
+          suggestion.address,
+          suggestion.mapUrl ?? null,
+          suggestion.reason,
+          suggestion.recommendation ?? null,
+          suggestion.visitorHash,
+        )
+        .run();
+      return { id, status: "pending" };
+    } catch (error) {
+      return communityFailure(error);
+    }
+  }
+
+  async consumeRateLimit(attempt: RateLimitAttempt): Promise<RateLimitResult> {
+    try {
+      await this.db
+        .prepare("DELETE FROM rate_limits WHERE expires_at <= ?")
+        .bind(attempt.now)
+        .run();
+      const row = await this.db
+        .prepare(
+          `INSERT INTO rate_limits
+            (key_hash, action, bucket, count, expires_at)
+           VALUES (?, ?, ?, 1, ?)
+           ON CONFLICT(key_hash, action, bucket) DO UPDATE SET
+             count = rate_limits.count + 1,
+             expires_at = excluded.expires_at
+           RETURNING count`,
+        )
+        .bind(
+          attempt.keyHash,
+          attempt.action,
+          attempt.bucket,
+          attempt.expiresAt,
+        )
+        .first<{ count: number }>();
+      if (!row) {
+        throw new Error("D1 rate-limit upsert returned no count.");
+      }
+      return {
+        allowed: row.count <= attempt.limit,
+        count: row.count,
+        retryAfterSeconds: Math.max(1, attempt.expiresAt - attempt.now),
+      };
+    } catch (error) {
+      return communityFailure(error);
+    }
   }
 }

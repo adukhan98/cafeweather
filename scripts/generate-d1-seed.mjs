@@ -58,6 +58,8 @@ const sql = [
     return `INSERT INTO cafes (id, slug, name, branch, address, address_verified, neighborhood_id, latitude, longitude, coordinate_confidence, branch_specificity, verification_status, attributes_json, recommendation, source_url, maps_url, verified_at, published) VALUES (${quote(record.slug)}, ${quote(record.slug)}, ${quote(record.name)}, ${quote(record.branch)}, ${quote(record.address)}, ${record.addressVerified ? 1 : 0}, (SELECT id FROM neighborhoods WHERE name = ${quote(record.neighborhood)}), ${quote(record.latitude)}, ${quote(record.longitude)}, ${quote(record.coordinateConfidence)}, ${quote(record.branchSpecificity)}, ${quote(verificationStatus(record))}, '[]', ${quote(record.recommendation)}, ${quote(record.sourceUrl)}, ${quote(mapsUrl)}, ${quote(record.verifiedAt)}, 1) ON CONFLICT(id) DO UPDATE SET slug = excluded.slug, name = excluded.name, branch = excluded.branch, address = excluded.address, address_verified = excluded.address_verified, neighborhood_id = excluded.neighborhood_id, latitude = excluded.latitude, longitude = excluded.longitude, coordinate_confidence = excluded.coordinate_confidence, branch_specificity = excluded.branch_specificity, verification_status = excluded.verification_status, attributes_json = excluded.attributes_json, recommendation = excluded.recommendation, source_url = excluded.source_url, maps_url = excluded.maps_url, verified_at = excluded.verified_at, published = excluded.published, updated_at = CURRENT_TIMESTAMP;`;
   }),
   "",
+  `UPDATE cafes SET published = 0, updated_at = CURRENT_TIMESTAMP WHERE id NOT IN (${ids});`,
+  "",
   `DELETE FROM cafe_moods WHERE cafe_id IN (${ids});`,
   `DELETE FROM cafe_offerings WHERE cafe_id IN (${ids});`,
   "",

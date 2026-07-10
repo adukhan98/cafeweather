@@ -9,6 +9,11 @@ import {
   D1CommunityRepository,
 } from "./db/repositories";
 import { errorResponse, HttpError, type FieldErrors } from "./http-errors";
+import {
+  createRateLimitAttempt,
+  DEFAULT_RATE_LIMITS,
+  type RateLimitConfig,
+} from "./rate-limit";
 import { CatalogueService } from "./services/catalogue";
 import {
   CommunityService,
@@ -41,13 +46,19 @@ export type ApiDependencies = Readonly<{
   communityRepository?: CommunityRepository;
   visitorSecret?: string;
   turnstileSecret?: string;
+  turnstileHostname?: string;
+  turnstileAction?: string;
   verifyTurnstile?: TurnstileVerifier;
+  production?: boolean;
+  rateLimits?: RateLimitConfig;
 }>;
 
 type ApiEnv = Env & {
   DB?: D1Database;
   VISITOR_HMAC_SECRET?: string;
   TURNSTILE_SECRET?: string;
+  TURNSTILE_HOSTNAME?: string;
+  TURNSTILE_ACTION?: string;
 };
 
 export function createApiHandlerFromEnv(env: Env) {
@@ -61,6 +72,8 @@ export function createApiHandlerFromEnv(env: Env) {
       : undefined,
     visitorSecret: apiEnv.VISITOR_HMAC_SECRET,
     turnstileSecret: apiEnv.TURNSTILE_SECRET,
+    turnstileHostname: apiEnv.TURNSTILE_HOSTNAME,
+    turnstileAction: apiEnv.TURNSTILE_ACTION,
   });
 }
 
@@ -116,14 +129,36 @@ async function readJson(request: Request): Promise<unknown> {
       "The request body is too large.",
     );
   }
-  const body = await request.text();
-  if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-    throw new HttpError(
-      413,
-      "request_too_large",
-      "The request body is too large.",
-    );
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteLength = 0;
+  if (reader) {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteLength += value.byteLength;
+      if (byteLength > MAX_BODY_BYTES) {
+        try {
+          await reader.cancel("request body too large");
+        } catch {
+          // The size rejection remains authoritative even if cancellation fails.
+        }
+        throw new HttpError(
+          413,
+          "request_too_large",
+          "The request body is too large.",
+        );
+      }
+      chunks.push(value);
+    }
   }
+  const bytes = new Uint8Array(byteLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const body = new TextDecoder().decode(bytes);
   try {
     return JSON.parse(body);
   } catch {
@@ -133,6 +168,45 @@ async function readJson(request: Request): Promise<unknown> {
       "The request body is not valid JSON.",
     );
   }
+}
+
+function decodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    throw new HttpError(
+      400,
+      "malformed_path_encoding",
+      "A route parameter is not valid percent-encoding.",
+    );
+  }
+}
+
+function isProductionRequest(request: Request, configured?: boolean): boolean {
+  if (configured !== undefined) return configured;
+  const hostname = new URL(request.url).hostname;
+  return !(
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.endsWith(".test")
+  );
+}
+
+function allowedMethods(path: string): readonly string[] | null {
+  if (
+    path === "/api/v1/facets" ||
+    path === "/api/v1/cafes" ||
+    path === "/api/v1/roulette" ||
+    /^\/api\/v1\/cafes\/[^/]+$/u.test(path)
+  ) {
+    return ["GET"];
+  }
+  if (path === "/api/v1/suggestions") return ["POST"];
+  if (/^\/api\/v1\/cafes\/[^/]+\/reactions\/[^/]+$/u.test(path)) {
+    return ["PUT", "DELETE"];
+  }
+  return null;
 }
 
 function withCookie(response: Response, setCookie?: string): Response {
@@ -147,6 +221,7 @@ export function createApiHandler(dependencies: ApiDependencies) {
     dependencies.turnstileSecret,
     dependencies.verifyTurnstile,
   );
+  const rateLimits = dependencies.rateLimits ?? DEFAULT_RATE_LIMITS;
 
   return async function handle(request: Request): Promise<Response> {
     const id = requestId(request);
@@ -209,7 +284,6 @@ export function createApiHandler(dependencies: ApiDependencies) {
             "The submission was rejected.",
           );
         }
-        await community.checkTurnstile(parsed.data.turnstileToken);
         if (!dependencies.visitorSecret) {
           throw new HttpError(
             503,
@@ -217,6 +291,24 @@ export function createApiHandler(dependencies: ApiDependencies) {
             "Community features are temporarily unavailable.",
           );
         }
+        const production = isProductionRequest(request, dependencies.production);
+        await community.consumeRateLimit(
+          await createRateLimitAttempt({
+            request,
+            secret: dependencies.visitorSecret,
+            action: "suggestion",
+            config: rateLimits,
+            production,
+          }),
+        );
+        await community.checkTurnstile({
+          token: parsed.data.turnstileToken,
+          remoteIp: request.headers.get("cf-connecting-ip") ?? undefined,
+          expectedHostname:
+            dependencies.turnstileHostname ?? new URL(request.url).hostname,
+          expectedAction: dependencies.turnstileAction ?? "suggestion",
+          required: production,
+        });
         const visitor = await getVisitorIdentity(
           request,
           dependencies.visitorSecret,
@@ -243,9 +335,9 @@ export function createApiHandler(dependencies: ApiDependencies) {
         (request.method === "PUT" || request.method === "DELETE")
       ) {
         ensureOrigin(request);
-        const cafeId = decodeURIComponent(reaction[1]);
+        const cafeId = decodePathSegment(reaction[1]);
         const kindResult = reactionKindSchema.safeParse(
-          decodeURIComponent(reaction[2]),
+          decodePathSegment(reaction[2]),
         );
         if (!kindResult.success) {
           throw new HttpError(
@@ -270,6 +362,15 @@ export function createApiHandler(dependencies: ApiDependencies) {
           request,
           dependencies.visitorSecret,
         );
+        await community.consumeRateLimit(
+          await createRateLimitAttempt({
+            request,
+            secret: dependencies.visitorSecret,
+            action: "reaction",
+            config: rateLimits,
+            production: isProductionRequest(request, dependencies.production),
+          }),
+        );
         const result =
           request.method === "PUT"
             ? await community.addReaction(
@@ -290,7 +391,7 @@ export function createApiHandler(dependencies: ApiDependencies) {
 
       const detail = path.match(/^\/api\/v1\/cafes\/([^/]+)$/u);
       if (detail && request.method === "GET") {
-        const result = await catalogue.findBySlug(decodeURIComponent(detail[1]));
+        const result = await catalogue.findBySlug(decodePathSegment(detail[1]));
         if (!result.cafe) {
           throw new HttpError(404, "cafe_not_found", "Cafe not found.");
         }
@@ -298,6 +399,15 @@ export function createApiHandler(dependencies: ApiDependencies) {
           cafe: result.cafe,
           meta: { source: result.source },
         });
+      }
+
+      const methods = allowedMethods(path);
+      if (methods) {
+        throw new HttpError(
+          405,
+          "method_not_allowed",
+          `Use ${methods.join(" or ")} for this resource.`,
+        );
       }
 
       throw new HttpError(404, "route_not_found", "API route not found.");

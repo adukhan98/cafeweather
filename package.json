@@ -17,7 +17,7 @@
     "dev": "react-router dev",
     "postinstall": "wrangler types",
     "preview": "npm run build && vite preview",
-    "test": "NODE_OPTIONS=--disable-warning=ExperimentalWarning vitest run",
+    "test": "vitest run",
     "typecheck": "wrangler types && react-router typegen && tsc -b"
   },
   "dependencies": {
