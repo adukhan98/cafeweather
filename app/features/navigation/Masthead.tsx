@@ -38,15 +38,21 @@ export function Masthead() {
 
   return (
     <header className="masthead">
-      <div className="masthead__location" aria-label="Guide location">
-        <span>Toronto, Ontario</span>
-        <span>Toronto cafés for the mood you’re in.</span>
-      </div>
-
-      <div className="masthead__title-row">
+      <div className="masthead__top-row">
         <a className="masthead__wordmark" href="/" aria-label="Café Weather home">
           Café Weather
         </a>
+
+        <nav className="masthead__desktop-nav" aria-label="Primary">
+          <ul>
+            {destinations.map((destination) => (
+              <li key={destination.label}>
+                <a href={destination.href}>{destination.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         <button
           ref={toggleRef}
           className="masthead__toggle"
@@ -62,15 +68,12 @@ export function Masthead() {
         </button>
       </div>
 
-      <nav className="masthead__desktop-nav" aria-label="Primary">
-        <ul>
-          {destinations.map((destination) => (
-            <li key={destination.label}>
-              <a href={destination.href}>{destination.label}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <div className="masthead__rule" aria-hidden="true" />
+
+      <div className="masthead__location" aria-label="Guide location">
+        <span>Toronto, Ontario</span>
+        <span>Toronto cafés for the mood you’re in.</span>
+      </div>
 
       <nav
         id="mobile-navigation"
@@ -93,8 +96,6 @@ export function Masthead() {
           ))}
         </ul>
       </nav>
-
-      <div className="masthead__rule" aria-hidden="true" />
     </header>
   );
 }

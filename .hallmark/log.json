@@ -8,6 +8,11 @@
     "nav": "N6 Newspaper masthead",
     "footer": "Ft1 Mast-headed",
     "critique": "P5 H4 E4 S5 R5 V4",
+    "design_taste": {
+      "variance": 8,
+      "motion": 6,
+      "density": 4
+    },
     "brief": "Café Weather responsive application shell for Toronto café discovery"
   }
 ]

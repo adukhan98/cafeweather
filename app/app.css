@@ -1,5 +1,6 @@
 /* Hallmark · genre: editorial · macrostructure: Ecosystem Index · theme: Garden · enrichment: code-native map later · nav: N6 · footer: Ft1
  * audience: Toronto café explorers · action: find by mood · tone: local editorial with playful roulette
+ * Design Taste: variance=8 · motion=6 · density=4
  * N6 knobs: issue-line=none, wordmark=2xl, rule=double · Ft1 knobs: wordmark=2xl, tagline=roman-body, links=inline
  * Hallmark · pre-emit critique: P5 H4 E4 S5 R5 V4
  */
@@ -100,27 +101,13 @@ h6 {
   padding: var(--space-sm) var(--page-gutter) 0;
 }
 
-.masthead__location {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding-block-end: var(--space-xs);
-  border-block-end: var(--rule-hair) solid var(--color-rule);
-  color: var(--color-muted);
-  font-size: var(--text-sm);
-  font-variant-caps: all-small-caps;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 1.25;
-}
-
-.masthead__title-row {
+.masthead__top-row {
   display: flex;
   min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  padding-block: var(--space-md) var(--space-sm);
+  padding-block: var(--space-md);
 }
 
 .masthead__wordmark {
@@ -133,6 +120,9 @@ h6 {
   line-height: 0.95;
   text-decoration: none;
   white-space: nowrap;
+  transition:
+    color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 .masthead__toggle {
@@ -223,6 +213,29 @@ h6 {
   border-block: var(--rule-hair) solid var(--color-rule-strong);
 }
 
+.masthead__location {
+  padding-block: var(--space-sm);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-variant-caps: all-small-caps;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.25;
+}
+
+.masthead__location span:last-child {
+  display: none;
+}
+
+.masthead__wordmark:active,
+.masthead__desktop-nav a:active,
+.masthead__mobile-nav a:active,
+.site-footer__links a:active {
+  color: var(--color-accent-hover);
+  text-decoration-thickness: var(--rule-hair);
+  transform: translateY(var(--rule-hair));
+}
+
 .app-shell__main {
   width: min(100%, var(--page-max));
   min-width: 0;
@@ -305,6 +318,7 @@ h6 {
     background: var(--color-paper);
   }
 
+  .masthead__wordmark:hover,
   .masthead__desktop-nav a:hover,
   .masthead__mobile-nav a:hover,
   .site-footer__links a:hover {
@@ -318,14 +332,13 @@ h6 {
     padding-block-start: var(--space-md);
   }
 
-  .masthead__title-row {
-    justify-content: center;
+  .masthead__top-row {
+    align-items: end;
     padding-block: var(--space-lg) var(--space-md);
-    text-align: center;
   }
 
   .masthead__wordmark {
-    font-size: clamp(var(--text-3xl), 7vw, var(--text-display));
+    font-size: clamp(var(--text-2xl), 5vw, var(--text-4xl));
   }
 
   .masthead__toggle,
@@ -339,8 +352,8 @@ h6 {
 
   .masthead__desktop-nav ul {
     display: flex;
-    justify-content: center;
-    gap: clamp(var(--space-md), 4vw, var(--space-2xl));
+    justify-content: end;
+    gap: clamp(var(--space-xs), 2vw, var(--space-lg));
   }
 
   .masthead__desktop-nav a {
@@ -353,8 +366,14 @@ h6 {
     letter-spacing: 0.08em;
   }
 
-  .masthead__rule {
-    margin-block-start: var(--space-xs);
+  .masthead__location {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-lg);
+  }
+
+  .masthead__location span:last-child {
+    display: inline;
   }
 
   .site-footer {
@@ -377,9 +396,7 @@ h6 {
 
 @media (min-width: 60rem) {
   .masthead__location {
-    display: grid;
-    grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr);
-    text-align: start;
+    padding-block: var(--space-sm) var(--space-md);
   }
 
   .site-footer {
@@ -399,6 +416,7 @@ h6 {
 
   .skip-link,
   .masthead__toggle,
+  .masthead__wordmark,
   .masthead__desktop-nav a,
   .masthead__mobile-nav a,
   .site-footer__links a {
