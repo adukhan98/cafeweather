@@ -154,6 +154,7 @@ export default function CafeMapCanvas({
     markersRef.current.forEach(({ element, glyph }, id) => {
       const selected = id === selectedId;
       element.setAttribute("aria-pressed", String(selected));
+      element.dataset.selected = String(selected);
       glyph.dataset.selected = String(selected);
     });
   }, [cafes, map, runtime, selectedId]);

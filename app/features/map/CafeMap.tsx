@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Cafe } from "../../contracts/cafes";
+import { InvitationNote } from "../brand/InvitationNote";
 
 const CafeMapCanvas = lazy(() => import("./CafeMap.client"));
 
@@ -58,6 +59,30 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
         ) : null}
       </div>
 
+      {selectedCafe ? (
+        <InvitationNote
+          as="article"
+          className="cafe-map__selected"
+          tilt="left"
+          aria-label="Selected place"
+        >
+          <p className="cafe-map__selected-stamp">
+            {selectedCafe.branch ?? "Toronto"} · {selectedCafe.neighborhood}
+          </p>
+          <p className="cafe-map__selected-name">
+            <a href={`/cafes/${selectedCafe.slug}`}>{selectedCafe.name}</a>
+          </p>
+          <p>{selectedCafe.recommendation}</p>
+          <address>{selectedCafe.address}</address>
+          <div className="cafe-map__selected-actions">
+            <a href={`/cafes/${selectedCafe.slug}`}>Meet me there</a>
+            <a href={selectedCafe.mapsUrl} target="_blank" rel="noreferrer">
+              Directions
+            </a>
+          </div>
+        </InvitationNote>
+      ) : null}
+
       <div className="cafe-map__index">
         <div className="cafe-map__index-head">
           <p>{cafes.length === 1 ? "1 café" : `${cafes.length} cafés`}</p>
@@ -68,6 +93,7 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
             <li key={cafe.id} data-selected={cafe.id === selectedCafe?.id}>
               <button
                 type="button"
+                aria-label={`Show ${cafe.name}${cafe.branch ? `, ${cafe.branch}` : ""}`}
                 aria-pressed={cafe.id === selectedCafe?.id}
                 onClick={() => setSelectedId(cafe.id)}
               >
@@ -100,6 +126,8 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
         Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>
         {" · "}
         tiles by <a href="https://openfreemap.org/">OpenFreeMap</a>
+        {" · "}
+        style data by <a href="https://openmaptiles.org/">OpenMapTiles</a>
       </p>
     </section>
   );

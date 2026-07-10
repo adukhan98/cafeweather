@@ -48,4 +48,21 @@ describe("CafeMap fallback", () => {
     expect(buttons[0]).toHaveAttribute("aria-pressed", "false");
     expect(buttons[1]).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("turns index selection into a visible invitation", async () => {
+    const user = userEvent.setup();
+    render(<CafeMap cafes={cafes.slice(0, 3)} />);
+
+    const map = screen.getByRole("region", { name: "Toronto café map" });
+    const index = within(map).getByRole("list", { name: "Cafés on this map" });
+
+    await user.click(
+      within(index).getByRole("button", { name: /show .*Larry's Place/i }),
+    );
+
+    expect(
+      within(map).getByRole("article", { name: "Selected place" }),
+    ).toHaveTextContent("Larry's Place");
+    expect(index).toBeVisible();
+  });
 });
