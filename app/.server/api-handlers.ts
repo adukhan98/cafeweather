@@ -1,0 +1,312 @@
+import { z } from "zod";
+import type { CafeFilters } from "../contracts/filters";
+import type {
+  CatalogueRepository,
+  CommunityRepository,
+} from "./db/repositories";
+import {
+  D1CatalogueRepository,
+  D1CommunityRepository,
+} from "./db/repositories";
+import { errorResponse, HttpError, type FieldErrors } from "./http-errors";
+import { CatalogueService } from "./services/catalogue";
+import {
+  CommunityService,
+  type TurnstileVerifier,
+} from "./services/community";
+import { getVisitorIdentity } from "./visitor";
+
+const MAX_BODY_BYTES = 16_384;
+const reactionKindSchema = z.enum([
+  "cozy",
+  "quiet",
+  "work-friendly",
+  "date-friendly",
+  "late-night",
+  "great-coffee",
+  "great-tea",
+]);
+const suggestionSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  address: z.string().trim().min(5).max(240),
+  mapUrl: z.url().startsWith("https://").optional(),
+  reason: z.string().trim().min(10).max(1_000),
+  recommendation: z.string().trim().max(500).optional(),
+  website: z.string().max(500).optional().default(""),
+  turnstileToken: z.string().max(2_048).optional(),
+});
+
+export type ApiDependencies = Readonly<{
+  catalogueRepository?: CatalogueRepository;
+  communityRepository?: CommunityRepository;
+  visitorSecret?: string;
+  turnstileSecret?: string;
+  verifyTurnstile?: TurnstileVerifier;
+}>;
+
+type ApiEnv = Env & {
+  DB?: D1Database;
+  VISITOR_HMAC_SECRET?: string;
+  TURNSTILE_SECRET?: string;
+};
+
+export function createApiHandlerFromEnv(env: Env) {
+  const apiEnv = env as ApiEnv;
+  return createApiHandler({
+    catalogueRepository: apiEnv.DB
+      ? new D1CatalogueRepository(apiEnv.DB)
+      : undefined,
+    communityRepository: apiEnv.DB
+      ? new D1CommunityRepository(apiEnv.DB)
+      : undefined,
+    visitorSecret: apiEnv.VISITOR_HMAC_SECRET,
+    turnstileSecret: apiEnv.TURNSTILE_SECRET,
+  });
+}
+
+function requestId(request: Request): string {
+  return request.headers.get("cf-ray") ?? crypto.randomUUID();
+}
+
+function ensureOrigin(request: Request): void {
+  const supplied = request.headers.get("origin");
+  if (!supplied || supplied !== new URL(request.url).origin) {
+    throw new HttpError(
+      403,
+      "origin_rejected",
+      "The request origin is not allowed.",
+    );
+  }
+}
+
+function values(search: URLSearchParams, key: string): string[] | undefined {
+  const result = search
+    .getAll(key)
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return result.length > 0 ? result : undefined;
+}
+
+function filters(search: URLSearchParams): CafeFilters {
+  return {
+    search: search.get("search") ?? search.get("q") ?? undefined,
+    neighborhoods: values(search, "neighborhoods"),
+    moods: values(search, "moods"),
+    offerings: values(search, "offerings"),
+    attributes: values(search, "attributes"),
+  };
+}
+
+function toFieldErrors(error: z.ZodError): FieldErrors {
+  const result: FieldErrors = {};
+  for (const issue of error.issues) {
+    const field = String(issue.path[0] ?? "form");
+    (result[field] ??= []).push(issue.message);
+  }
+  return result;
+}
+
+async function readJson(request: Request): Promise<unknown> {
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    throw new HttpError(
+      413,
+      "request_too_large",
+      "The request body is too large.",
+    );
+  }
+  const body = await request.text();
+  if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
+    throw new HttpError(
+      413,
+      "request_too_large",
+      "The request body is too large.",
+    );
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new HttpError(
+      400,
+      "invalid_json",
+      "The request body is not valid JSON.",
+    );
+  }
+}
+
+function withCookie(response: Response, setCookie?: string): Response {
+  if (setCookie) response.headers.set("set-cookie", setCookie);
+  return response;
+}
+
+export function createApiHandler(dependencies: ApiDependencies) {
+  const catalogue = new CatalogueService(dependencies.catalogueRepository);
+  const community = new CommunityService(
+    dependencies.communityRepository,
+    dependencies.turnstileSecret,
+    dependencies.verifyTurnstile,
+  );
+
+  return async function handle(request: Request): Promise<Response> {
+    const id = requestId(request);
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname.replace(/\/$/u, "") || "/";
+
+      if (path === "/api/v1/facets" && request.method === "GET") {
+        const result = await catalogue.facets();
+        return Response.json({
+          facets: result.facets,
+          meta: { source: result.source },
+        });
+      }
+
+      if (path === "/api/v1/cafes" && request.method === "GET") {
+        const result = await catalogue.list(filters(url.searchParams));
+        return Response.json({
+          cafes: result.cafes,
+          meta: { source: result.source, count: result.cafes.length },
+        });
+      }
+
+      if (path === "/api/v1/roulette" && request.method === "GET") {
+        const seed =
+          url.searchParams.get("seed") ?? new Date().toISOString().slice(0, 10);
+        const result = await catalogue.roulette(
+          filters(url.searchParams),
+          seed,
+          url.searchParams.get("previousId") ?? undefined,
+        );
+        if (!result.cafe) {
+          throw new HttpError(
+            404,
+            "no_matching_cafes",
+            "No cafes match those filters.",
+          );
+        }
+        return Response.json({
+          cafe: result.cafe,
+          meta: { source: result.source, seed },
+        });
+      }
+
+      if (path === "/api/v1/suggestions" && request.method === "POST") {
+        ensureOrigin(request);
+        const parsed = suggestionSchema.safeParse(await readJson(request));
+        if (!parsed.success) {
+          throw new HttpError(
+            400,
+            "validation_failed",
+            "Please correct the highlighted fields.",
+            toFieldErrors(parsed.error),
+          );
+        }
+        if (parsed.data.website) {
+          throw new HttpError(
+            400,
+            "bot_detected",
+            "The submission was rejected.",
+          );
+        }
+        await community.checkTurnstile(parsed.data.turnstileToken);
+        if (!dependencies.visitorSecret) {
+          throw new HttpError(
+            503,
+            "visitor_identity_unavailable",
+            "Community features are temporarily unavailable.",
+          );
+        }
+        const visitor = await getVisitorIdentity(
+          request,
+          dependencies.visitorSecret,
+        );
+        const suggestion = await community.createSuggestion({
+          name: parsed.data.name,
+          address: parsed.data.address,
+          mapUrl: parsed.data.mapUrl,
+          reason: parsed.data.reason,
+          recommendation: parsed.data.recommendation,
+          visitorHash: visitor.visitorHash,
+        });
+        return withCookie(
+          Response.json({ suggestion }, { status: 202 }),
+          visitor.setCookie,
+        );
+      }
+
+      const reaction = path.match(
+        /^\/api\/v1\/cafes\/([^/]+)\/reactions\/([^/]+)$/u,
+      );
+      if (
+        reaction &&
+        (request.method === "PUT" || request.method === "DELETE")
+      ) {
+        ensureOrigin(request);
+        const cafeId = decodeURIComponent(reaction[1]);
+        const kindResult = reactionKindSchema.safeParse(
+          decodeURIComponent(reaction[2]),
+        );
+        if (!kindResult.success) {
+          throw new HttpError(
+            400,
+            "validation_failed",
+            "The reaction kind is not allowed.",
+            { kind: kindResult.error.issues.map(({ message }) => message) },
+          );
+        }
+        const detail = await catalogue.findBySlug(cafeId);
+        if (!detail.cafe) {
+          throw new HttpError(404, "cafe_not_found", "Cafe not found.");
+        }
+        if (!dependencies.visitorSecret) {
+          throw new HttpError(
+            503,
+            "visitor_identity_unavailable",
+            "Community features are temporarily unavailable.",
+          );
+        }
+        const visitor = await getVisitorIdentity(
+          request,
+          dependencies.visitorSecret,
+        );
+        const result =
+          request.method === "PUT"
+            ? await community.addReaction(
+                detail.cafe.id,
+                visitor.visitorHash,
+                kindResult.data,
+              )
+            : await community.removeReaction(
+                detail.cafe.id,
+                visitor.visitorHash,
+                kindResult.data,
+              );
+        return withCookie(
+          Response.json({ reaction: result }),
+          visitor.setCookie,
+        );
+      }
+
+      const detail = path.match(/^\/api\/v1\/cafes\/([^/]+)$/u);
+      if (detail && request.method === "GET") {
+        const result = await catalogue.findBySlug(decodeURIComponent(detail[1]));
+        if (!result.cafe) {
+          throw new HttpError(404, "cafe_not_found", "Cafe not found.");
+        }
+        return Response.json({
+          cafe: result.cafe,
+          meta: { source: result.source },
+        });
+      }
+
+      throw new HttpError(404, "route_not_found", "API route not found.");
+    } catch (error) {
+      if (error instanceof HttpError) return errorResponse(error, id);
+      return errorResponse(
+        new HttpError(500, "internal_error", "An unexpected error occurred."),
+        id,
+      );
+    }
+  };
+}

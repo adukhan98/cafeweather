@@ -2,5 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cafe-weather",
   "compatibility_date": "2026-07-09",
-  "main": "./workers/app.ts"
+  "main": "./workers/app.ts",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cafe-weather",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
 }
