@@ -16,7 +16,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   );
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: `Café roulette · ${brand.name}` },
     {

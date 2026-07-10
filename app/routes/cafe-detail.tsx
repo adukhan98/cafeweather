@@ -21,7 +21,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return data(result, { status: result.cafe ? 200 : 404 });
 }
 
-export function meta({ loaderData }: Route.MetaArgs) {
+export function meta({ loaderData }: Pick<Route.MetaArgs, "loaderData">) {
   const cafe = loaderData?.cafe;
   return [
     {

@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import NotFound from "../../app/routes/not-found";
+import NotFound, { loader as notFoundLoader } from "../../app/routes/not-found";
 import Privacy from "../../app/routes/privacy";
 import Terms from "../../app/routes/terms";
 
@@ -72,5 +72,13 @@ describe("legal and recovery routes", () => {
       "href",
       "/roulette",
     );
+  });
+
+  it("returns an HTTP 404 while preserving the recovery page", async () => {
+    const result = await notFoundLoader();
+
+    expect(result.init?.status).toBe(404);
+    render(<NotFound />);
+    expect(screen.getByText("We lost the note, not the whole city.")).toBeInTheDocument();
   });
 });

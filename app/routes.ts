@@ -22,4 +22,5 @@ export default [
     "api/v1/cafes/:cafeId/reactions/:kind",
     "routes/api.reaction.ts",
   ),
+  route("api/v1/*", "routes/api.not-found.ts"),
 ] satisfies RouteConfig;

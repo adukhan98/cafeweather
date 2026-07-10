@@ -1,4 +1,10 @@
+import { data } from "react-router";
+
 import { brand } from "../config/brand";
+
+export function loader() {
+  return data(null, { status: 404 });
+}
 
 export function meta() {
   return [

@@ -9,7 +9,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   return prepareCatalogueData(catalogueServiceFromEnv(cloudflare.env));
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: `Browse Toronto cafés · ${brand.name}` },
     {
