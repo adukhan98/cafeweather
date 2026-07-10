@@ -6,6 +6,7 @@
   --color-clay: #efb6a3;
   --color-burgundy: #8e2f2d;
   --color-ink: var(--color-espresso);
+  --color-ink-soft: #563c33;
   --color-paper: var(--color-cream);
   --color-paper-2: #f2ddbf;
   --color-paper-3: #e8ccaa;
@@ -49,6 +50,8 @@
   --dur-long: 520ms;
   --rule-hair: 1px;
   --rule-strong: 2px;
+  --rule-double: 4px;
+  --radius-none: 0;
   --target-min: 2.75rem;
   --page-max: 100rem;
   --page-gutter: clamp(1rem, 3vw, 3rem);
