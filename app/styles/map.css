@@ -61,8 +61,18 @@
 .cafe-map__skeleton span,
 .cafe-map__error > * { position: relative; z-index: 1; }
 
+.cafe-map__state-mark {
+  display: block;
+  width: var(--space-xl);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  border: var(--rule-strong) solid var(--color-burgundy);
+  transform: rotate(45deg);
+}
+
 .cafe-map__error { gap: var(--space-sm); background: var(--color-clay); pointer-events: auto; }
 .cafe-map__error p { margin: 0; }
+.cafe-map__error strong { font-family: var(--font-display); font-size: var(--text-xl); }
 
 .cafe-map__selected {
   z-index: 2;

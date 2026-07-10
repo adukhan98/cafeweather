@@ -33,11 +33,11 @@ describe("CafeMap fallback", () => {
       "cafe-map__skeleton",
     );
     await waitFor(() =>
-      expect(screen.getByText("Interactive map unavailable.")).toBeInTheDocument(),
+      expect(screen.getByText("The map missed the meeting.")).toBeInTheDocument(),
     );
 
     const map = screen.getByRole("region", { name: "Toronto café map" });
-    expect(within(map).getByText("Interactive map unavailable.").parentElement).toHaveClass(
+    expect(within(map).getByText("The map missed the meeting.").closest(".cafe-map__error")).toHaveClass(
       "cafe-map__error",
     );
     expect(within(map).getByText(/does not provide WebGL/)).toBeInTheDocument();

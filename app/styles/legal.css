@@ -1,0 +1,72 @@
+/* Legal and recovery pages read like the useful side of a passed note. */
+.legal-page,
+.not-found-page {
+  position: relative;
+  display: grid;
+  width: min(100%, 68rem);
+  min-height: min(70dvh, 44rem);
+  margin-inline: auto;
+  padding: clamp(var(--space-xl), 7vw, var(--space-4xl));
+  align-content: center;
+  gap: var(--space-2xl);
+  overflow: hidden;
+  background: var(--color-honey);
+  color: var(--color-espresso);
+}
+
+.legal-page::after,
+.not-found-page::after {
+  content: "";
+  position: absolute;
+  width: min(58vw, 24rem);
+  aspect-ratio: 1;
+  inset-block-end: calc(var(--space-4xl) * -1);
+  inset-inline-end: calc(var(--space-3xl) * -1);
+  border: var(--rule-strong) solid var(--color-burgundy);
+  border-radius: 50%;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.legal-page--terms { background: var(--color-clay); }
+
+.legal-page__header,
+.legal-page__content,
+.not-found-page__header,
+.not-found-page__links { position: relative; z-index: 1; }
+
+.legal-page__header,
+.not-found-page__header,
+.legal-page__content { display: grid; gap: var(--space-md); }
+
+.legal-page h1,
+.not-found-page h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(var(--text-3xl), 10vw, var(--text-display));
+  line-height: 0.9;
+}
+
+.legal-page__content { max-width: 62ch; font-size: var(--text-md); }
+.legal-page__content p,
+.not-found-page__header p { margin: 0; }
+
+.legal-page a { color: var(--color-burgundy); font-weight: 700; }
+
+.not-found-page { background: var(--color-terracotta); }
+.not-found-page__header p { max-width: 28ch; font-size: var(--text-xl); }
+.not-found-page__links { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.not-found-page__links a {
+  display: inline-flex;
+  min-height: var(--target-min);
+  padding: var(--space-xs) var(--space-lg);
+  align-items: center;
+  border: var(--rule-strong) solid var(--color-espresso);
+  background: var(--color-cream);
+  color: var(--color-espresso);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-source-notice { transform: none; }
+}

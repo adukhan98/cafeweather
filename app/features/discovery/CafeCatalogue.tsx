@@ -210,6 +210,14 @@ export function CafeCatalogue({
     commit(emptyDiscoveryState, "push");
   };
 
+  const removeActiveFilter = (filter: ActiveFilter) => {
+    if (filter.key === "search") {
+      commit({ search: "" }, "push");
+    } else if (filter.facet && filter.value) {
+      toggleFacet(filter.facet, filter.value);
+    }
+  };
+
   const activeFilters: ActiveFilter[] = [
     ...(state.search
       ? [
@@ -318,13 +326,7 @@ export function CafeCatalogue({
                   <button
                     type="button"
                     aria-label={filter.aria}
-                    onClick={() => {
-                      if (filter.key === "search") {
-                        commit({ search: "" }, "push");
-                      } else if (filter.facet && filter.value) {
-                        toggleFacet(filter.facet, filter.value);
-                      }
-                    }}
+                    onClick={() => removeActiveFilter(filter)}
                   >
                     Remove
                   </button>
@@ -365,19 +367,33 @@ export function CafeCatalogue({
               <span>Map view</span>
             </label>
           </fieldset>
-          <button type="button" className="reset-button" onClick={reset}>
-            Reset all filters
-          </button>
+          {results.length > 0 && activeFilters.length > 0 ? (
+            <button type="button" className="reset-button" onClick={reset}>
+              Reset the whole plan
+            </button>
+          ) : null}
         </div>
       </section>
 
       {results.length === 0 ? (
         <section className="empty-results" aria-labelledby="empty-results-title">
           <CoffeeBean size={32} weight="regular" aria-hidden="true" />
-          <h2 id="empty-results-title">No cafés match those filters.</h2>
-          <p>Try a broader search, remove a filter, or return to the full Toronto list.</p>
+          <h2 id="empty-results-title">Nothing fits all of that.</h2>
+          <p>Pull one note off the plan, or start again with the whole city.</p>
+          <div className="empty-results__filters" aria-label="Filters to remove">
+            {activeFilters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => removeActiveFilter(filter)}
+                aria-label={`Remove ${filter.label}`}
+              >
+                Remove <span>{filter.label}</span>
+              </button>
+            ))}
+          </div>
           <button type="button" className="action-link" onClick={reset}>
-            Show all cafés
+            Reset the whole plan
           </button>
         </section>
       ) : (

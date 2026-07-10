@@ -24,9 +24,9 @@ export default function NotFound() {
         <p>We lost the note, not the whole city.</p>
       </header>
       <nav className="not-found-page__links" aria-label="Recovery options">
-        <a href="/cafes">Browse every place</a>
-        <a href="/cafes?view=map">Open the map</a>
-        <a href="/roulette">Try roulette</a>
+        <a href="/cafes">Browse</a>
+        <a href="/cafes?view=map">Map</a>
+        <a href="/roulette">Roulette</a>
       </nav>
     </article>
   );

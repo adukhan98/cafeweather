@@ -60,15 +60,15 @@ describe("legal and recovery routes", () => {
     render(<NotFound />);
 
     expect(screen.getByText("We lost the note, not the whole city.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Browse every place" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Browse" })).toHaveAttribute(
       "href",
       "/cafes",
     );
-    expect(screen.getByRole("link", { name: "Open the map" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute(
       "href",
       "/cafes?view=map",
     );
-    expect(screen.getByRole("link", { name: "Try roulette" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Roulette" })).toHaveAttribute(
       "href",
       "/roulette",
     );

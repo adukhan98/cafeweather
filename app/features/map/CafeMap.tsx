@@ -37,12 +37,14 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
       <div className="cafe-map__canvas-wrap">
         {status === "loading" ? (
           <div className="cafe-map__skeleton" role="status">
+            <span className="cafe-map__state-mark" aria-hidden="true" />
             <span>Loading the Toronto map…</span>
           </div>
         ) : null}
         {status === "error" ? (
           <div className="cafe-map__error" role="status">
-            <p>Interactive map unavailable.</p>
+            <span className="cafe-map__state-mark" aria-hidden="true" />
+            <p><strong>The map missed the meeting.</strong></p>
             <p>{errorMessage} Use the complete café index beside the map.</p>
           </div>
         ) : null}

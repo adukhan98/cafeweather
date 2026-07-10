@@ -171,6 +171,7 @@ describe("SuggestionForm", () => {
       await screen.findByText("Thanks. Your suggestion is pending review."),
     ).toBeInTheDocument();
     expect(screen.getByText("Pending review.")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("button", { name: "Suggest another place" })).toBeVisible();
     expect(submitSuggestion.mock.calls[1]?.[0].submissionId).toBe(suggestionId);
     expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(2);
   });

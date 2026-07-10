@@ -237,14 +237,16 @@ export function ReactionBar({
       </div>
 
       {loadError ? (
-        <div className="reaction-bar__error">
+        <div className="reaction-bar__error" role="alert">
+          <span className="reaction-bar__error-mark" aria-hidden="true" />
+          <p><strong>The notes are unavailable right now.</strong></p>
           <p>{loadError}</p>
           <button
             className="text-button"
             type="button"
             onClick={() => setLoadAttempt((attempt) => attempt + 1)}
           >
-            Retry reactions
+            Try reactions again
           </button>
         </div>
       ) : null}

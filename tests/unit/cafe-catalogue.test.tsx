@@ -34,6 +34,23 @@ function renderCatalogue(initialEntry = "/cafes") {
 }
 
 describe("CafeCatalogue", () => {
+  it("turns an empty result into a filter-by-filter invitation to recover", async () => {
+    const user = userEvent.setup();
+    renderCatalogue("/cafes?q=nowhere&mood=coffee-nerd");
+
+    expect(
+      screen.getByRole("heading", { name: "Nothing fits all of that." }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remove Search: nowhere" }));
+    expect(screen.getByLabelText("Current URL")).toHaveTextContent(
+      "/cafes?mood=coffee-nerd",
+    );
+
+    await user.type(screen.getByRole("searchbox", { name: "Search cafés" }), "nowhere");
+    expect(
+      await screen.findByRole("button", { name: "Reset the whole plan" }),
+    ).toBeInTheDocument();
+  });
   it("opens with the invitation-led browse heading", () => {
     renderCatalogue();
     expect(
@@ -237,7 +254,7 @@ describe("CafeCatalogue", () => {
     const user = userEvent.setup();
     renderCatalogue("/cafes?q=does-not-exist&mood=late-night&view=map");
 
-    await user.click(screen.getByRole("button", { name: "Reset all filters" }));
+    await user.click(screen.getByRole("button", { name: "Reset the whole plan" }));
 
     expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes");
     expect(document.querySelector(".catalogue-count")).toHaveTextContent(
@@ -251,12 +268,12 @@ describe("CafeCatalogue", () => {
     const user = userEvent.setup();
     renderCatalogue("/cafes?q=does-not-exist");
 
-    expect(screen.getByRole("heading", { name: "No cafés match those filters." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nothing fits all of that." })).toBeInTheDocument();
     expect(
-      screen.getByText("Try a broader search, remove a filter, or return to the full Toronto list."),
+      screen.getByText("Pull one note off the plan, or start again with the whole city."),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Show all cafés" }));
+    await user.click(screen.getByRole("button", { name: "Reset the whole plan" }));
     expect(document.querySelector(".catalogue-count")).toHaveTextContent(
       `${cafes.length} cafés`,
     );

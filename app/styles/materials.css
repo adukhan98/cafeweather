@@ -5,6 +5,33 @@
   overflow: clip;
 }
 
+.data-source-notice {
+  position: relative;
+  display: grid;
+  max-width: 64ch;
+  min-width: 0;
+  padding: var(--space-md) var(--space-lg);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-md);
+  overflow: hidden;
+  border: 0;
+  border-inline-start: var(--rule-strong) solid var(--color-burgundy);
+  background: var(--color-honey);
+  color: var(--color-espresso);
+  box-shadow: var(--space-2xs) var(--space-2xs) 0 var(--color-shadow);
+  transform: rotate(-0.25deg);
+}
+
+.data-source-notice p { margin: 0; }
+
+.data-source-notice__mark {
+  width: var(--space-md);
+  aspect-ratio: 1;
+  border: var(--rule-strong) solid var(--color-burgundy);
+  transform: rotate(45deg);
+}
+
 .scene[data-tone="espresso"],
 .scene[data-tone="burgundy"] {
   color: var(--color-cream);

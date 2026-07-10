@@ -342,7 +342,7 @@ export function SuggestionForm({
             type="button"
             onClick={() => setSuccess(false)}
           >
-            Suggest another café
+            Suggest another place
           </button>
         </div>
       ) : null}

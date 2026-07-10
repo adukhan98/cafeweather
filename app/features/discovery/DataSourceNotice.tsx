@@ -5,8 +5,11 @@ export function DataSourceNotice({ source }: { source?: CatalogueSource }) {
 
   return (
     <aside className="data-source-notice" aria-label="Catalogue status">
-      <strong>Verified snapshot in use.</strong>{" "}
-      Live catalogue and community data may be unavailable; these listings are from the last verified guide snapshot.
+      <span className="data-source-notice__mark" aria-hidden="true" />
+      <p>
+        <strong>Verified snapshot in use.</strong>{" "}
+        Live catalogue and community data may be unavailable; these listings are from the last verified guide snapshot.
+      </p>
     </aside>
   );
 }

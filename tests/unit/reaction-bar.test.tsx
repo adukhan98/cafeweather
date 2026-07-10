@@ -43,6 +43,15 @@ function api(overrides: Partial<CommunityApiClient> = {}): CommunityApiClient {
 }
 
 describe("ReactionBar", () => {
+  it("frames a failed load as a recoverable unavailable note", async () => {
+    const getReactions = vi.fn().mockRejectedValue(new Error("offline"));
+    const user = userEvent.setup();
+    render(<ReactionBar slug="cafe-a" api={api({ getReactions })} />);
+
+    expect(await screen.findByText("The notes are unavailable right now.")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Try reactions again" }));
+    expect(getReactions).toHaveBeenCalledTimes(2);
+  });
   it("renders seven ordered coasters disabled until the initial state loads", async () => {
     const load = deferred<typeof loadedReactions>();
     render(
