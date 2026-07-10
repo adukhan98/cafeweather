@@ -155,7 +155,12 @@
 .cafe-map__index li > a { display: inline-flex; padding-inline: var(--space-sm); align-items: center; font-size: var(--text-sm); font-weight: 700; }
 
 .cafe-map__attribution { margin: 0; font-size: var(--text-xs); line-height: 1.5; }
-.cafe-map__attribution a { color: inherit; }
+.cafe-map__attribution a {
+  display: inline-flex;
+  min-height: var(--target-min);
+  align-items: center;
+  color: inherit;
+}
 
 .cafe-map__marker {
   display: grid;

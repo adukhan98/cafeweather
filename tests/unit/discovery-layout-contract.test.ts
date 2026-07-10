@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyleSource } from "../helpers/style-source";
 
-const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
+const css = readStyleSource();
 const homeCss = readFileSync(
   new URL("../../app/styles/home.css", import.meta.url),
   "utf8",
@@ -45,7 +46,7 @@ describe("discovery intermediate-width layout", () => {
 
     expect(tablet).not.toMatch(/\.cafe-row\s*\{[^}]*grid-template-columns:/s);
     expect(desktop).toMatch(
-      /\.cafe-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.3fr\)/s,
+      /\.catalogue-page \.cafe-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto/s,
     );
   });
 

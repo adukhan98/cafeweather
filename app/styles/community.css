@@ -5,6 +5,37 @@
   color: var(--color-cream);
 }
 
+.reaction-bar {
+  display: grid;
+  max-width: 62rem;
+  gap: var(--space-md);
+}
+
+.reaction-bar__intro,
+.reaction-bar__live {
+  margin: 0;
+}
+
+.reaction-bar__intro {
+  max-width: 52ch;
+}
+
+.reaction-bar__choices {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.reaction-bar__live {
+  position: absolute;
+  width: var(--rule-hair);
+  height: var(--rule-hair);
+  overflow: clip;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .suggest-page__header {
   display: grid;
   max-width: 64rem;

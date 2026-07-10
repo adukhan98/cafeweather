@@ -160,7 +160,11 @@
 .cafe-row:nth-child(odd) { transform: rotate(-0.35deg); }
 .cafe-row__index { margin: 0; color: var(--color-burgundy); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .cafe-row__name { font-size: clamp(var(--text-xl), 7vw, var(--text-3xl)); overflow-wrap: normal; word-break: normal; }
-.cafe-row__name a { display: inline; }
+.cafe-row__name a {
+  display: inline-flex;
+  min-height: var(--target-min);
+  align-items: center;
+}
 .cafe-row__mood { width: fit-content; padding: var(--space-xs) var(--space-sm); border: var(--rule-strong) solid currentColor; color: var(--color-burgundy); font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; }
 .cafe-row__directions,
 .cafe-row__meet { display: inline-flex; min-height: var(--target-min); align-items: center; font-weight: 700; }

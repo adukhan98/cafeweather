@@ -39,20 +39,21 @@ function declarationsFor(selector: string) {
 
 describe("Meet Me There design-system contract", () => {
   it("records the approved Design Taste dials in CSS and Hallmark memory", () => {
-    expect(css).toContain("Design Taste: variance=8 · motion=6 · density=4");
+    expect(css).toContain("Meet Me There · invitation system");
+    expect(css).not.toContain("Café Weather · Garden");
+    expect(css).not.toContain("Newsreader Variable");
     expect(hallmarkLog[0]?.design_taste).toEqual({
-      variance: 8,
-      motion: 6,
+      variance: 9,
+      motion: 7,
       density: 4,
     });
   });
 
   it("describes the shipped discovery artifact and its real map enrichment", () => {
-    expect(css.split("\n", 1)[0]).toContain("macrostructure: Ecosystem Index");
-    expect(css.split("\n", 1)[0]).toContain("enrichment: code-native MapLibre");
     expect(hallmarkLog[0]).toMatchObject({
-      macrostructure: "Ecosystem Index",
-      enrichment: "code-native MapLibre map",
+      artifact: "Meet Me There full product redesign",
+      macrostructure: "Invitation City",
+      enrichment: "code-native illustration plus MapLibre",
     });
   });
 
@@ -99,14 +100,13 @@ describe("Meet Me There design-system contract", () => {
       );
     }
 
-    const reducedMotion = css.slice(
-      css.lastIndexOf("@media (prefers-reduced-motion: reduce)"),
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\[data-motion="reveal"\][\s\S]*?transform:\s*none[\s\S]*?transition:\s*opacity var\(--dur-micro\) linear/,
     );
-    expect(reducedMotion).toContain('[data-motion="reveal"]');
-    expect(reducedMotion).toContain("transform: none");
-    expect(reducedMotion).toContain(
-      "transition: opacity var(--dur-micro) linear",
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation-duration:\s*0\.01ms/,
     );
+    expect(css).not.toMatch(/body\s*\{[^}]*overflow-x:\s*(?:auto|scroll)/s);
   });
 
   it("loads only the local Latin Fontsource declaration bundle", () => {

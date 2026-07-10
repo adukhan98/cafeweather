@@ -5,7 +5,7 @@
 export async function assertAppShellGeometry(page, width, height = 800) {
   await page.setViewportSize({ width, height });
 
-  const result = await page.evaluate(() => {
+  const measure = () => page.evaluate(() => {
     const wordmark = document.querySelector(".brand-lockup__home");
     const toggle = document.querySelector(".site-nav__toggle");
     if (!(wordmark instanceof HTMLElement) || !(toggle instanceof HTMLElement)) {
@@ -36,9 +36,23 @@ export async function assertAppShellGeometry(page, width, height = 800) {
       }];
     });
 
+    const overflowingChildren = Array.from(document.querySelectorAll("body *"))
+      .flatMap((element) => {
+        if (!(element instanceof HTMLElement)) return [];
+        if (element.closest('[data-horizontal-rail="true"]')) return [];
+        const rect = element.getBoundingClientRect();
+        if (rect.left >= -1 && rect.right <= window.innerWidth + 1) return [];
+        return [{
+          label: element.className || element.tagName,
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        }];
+      });
+
     return {
       mobile,
-      noOverflow: document.documentElement.scrollWidth === window.innerWidth,
+      noOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+      overflowingChildren,
       toggleHeight: toggleRect.height,
       toggleVisible: toggleRect.width > 0 && toggleRect.height > 0,
       wordmarkHeight: wordmarkRect.height,
@@ -48,7 +62,13 @@ export async function assertAppShellGeometry(page, width, height = 800) {
     };
   });
 
-  if (!result.noOverflow) throw new Error(`Horizontal overflow at ${width}px`);
+  const result = await measure();
+
+  if (!result.noOverflow) {
+    throw new Error(
+      `Horizontal overflow at ${width}px: ${JSON.stringify(result.overflowingChildren)}`,
+    );
+  }
   if (!result.wordmarkVisible) throw new Error(`Wordmark hidden at ${width}px`);
   if (result.undersizedTargets.length > 0) {
     throw new Error(
@@ -67,5 +87,18 @@ export async function assertAppShellGeometry(page, width, height = 800) {
     if (result.controlsOverlap) throw new Error(`Wordmark overlaps menu at ${width}px`);
   }
 
-  return result;
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+  });
+  const zoomedResult = await measure();
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "";
+  });
+
+  if (!zoomedResult.noOverflow) {
+    throw new Error(
+      `Horizontal overflow at ${width}px and 200% zoom: ${JSON.stringify(zoomedResult.overflowingChildren)}`,
+    );
+  }
+  return { normal: result, zoomed: zoomedResult };
 }

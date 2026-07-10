@@ -1,5 +1,9 @@
 .scene {
   position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   isolation: isolate;
   padding: clamp(var(--space-xl), 8vw, var(--space-4xl)) var(--page-gutter);
   overflow: clip;
@@ -137,6 +141,7 @@
 .place-invitation h2 a,
 .place-invitation h3 a {
   display: flex;
+  min-height: var(--target-min);
   align-items: center;
   text-decoration-color: var(--color-terracotta);
 }

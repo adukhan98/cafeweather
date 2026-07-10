@@ -65,8 +65,8 @@
 .home-hero__route {
   position: absolute;
   inset-block-end: 12%;
-  inset-inline-start: -4%;
-  width: 54%;
+  inset-inline-start: 0;
+  width: 50%;
 }
 
 .home-search {
@@ -76,12 +76,21 @@
   font-weight: 700;
 }
 .home-search__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--target-min);
   box-shadow: var(--space-xs) var(--space-xs) 0 var(--color-burgundy);
 }
 .home-search input,
 .home-search button {
   border-color: var(--color-espresso);
   background: var(--color-cream);
+}
+.home-search input {
+  min-width: 0;
+}
+.home-search button {
+  width: var(--target-min);
+  min-width: var(--target-min);
 }
 
 .mood-scene {

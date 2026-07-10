@@ -8,6 +8,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
   [data-motion="reveal"],
   .invitation-note,
   .location-stamp,
@@ -16,5 +25,9 @@
     animation: none;
     transform: none;
     transition: opacity var(--dur-micro) linear;
+  }
+
+  [data-motion="reveal"] {
+    opacity: 1;
   }
 }

@@ -215,6 +215,7 @@ export function DiscoveryHome({
         {scenes.cityTrail.length > 0 ? (
           <div
             className="city-trail__scroller"
+            data-horizontal-rail="true"
             role="region"
             aria-label="Places people keep mentioning"
             tabIndex={0}
