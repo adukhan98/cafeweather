@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "react-router build",
+    "check:client-budget": "node scripts/check-client-budget.mjs",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply cafe-weather --local",
     "db:reset:e2e": "wrangler d1 execute cafe-weather --local --command \"DELETE FROM reactions; DELETE FROM suggestions; DELETE FROM rate_limits;\"",
