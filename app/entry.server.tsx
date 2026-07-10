@@ -3,6 +3,19 @@ import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 
+export function createRenderErrorHandler(
+  setResponseStatusCode: (status: number) => void,
+  hasRenderedShell: () => boolean,
+) {
+  return (error: unknown) => {
+    setResponseStatusCode(500);
+
+    if (hasRenderedShell()) {
+      console.error(error);
+    }
+  };
+}
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -11,16 +24,16 @@ export default async function handleRequest(
 ) {
   let shellRendered = false;
   const userAgent = request.headers.get("user-agent");
+  const onError = createRenderErrorHandler(
+    (status) => {
+      responseStatusCode = status;
+    },
+    () => shellRendered,
+  );
 
   const body = await renderToReadableStream(
     <ServerRouter context={routerContext} url={request.url} />,
-    {
-      onError(error: unknown) {
-        if (shellRendered) {
-          console.error(error);
-        }
-      },
-    },
+    { onError },
   );
   shellRendered = true;
 
