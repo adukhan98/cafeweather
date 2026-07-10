@@ -85,6 +85,8 @@ describe("CafeMapCanvas marker lifecycle", () => {
     );
 
     await waitFor(() => expect(second).toHaveAttribute("aria-pressed", "true"));
+    expect(second).toHaveAttribute("data-selected", "true");
+    expect(first).toHaveAttribute("data-selected", "false");
     expect(screen.getByRole("button", { name: /show Teamendous/i })).toBe(second);
     expect(second).toHaveFocus();
     expect(fitBounds).toHaveBeenCalledTimes(1);

@@ -64,14 +64,20 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
           as="article"
           className="cafe-map__selected"
           tilt="left"
+          id="selected-cafe-on-map"
           aria-label="Selected place"
+          aria-live="polite"
+          aria-atomic
         >
           <p className="cafe-map__selected-stamp">
             {selectedCafe.branch ?? "Toronto"} · {selectedCafe.neighborhood}
           </p>
-          <p className="cafe-map__selected-name">
+          <h3
+            className="cafe-map__selected-name"
+            aria-label={`Selected place: ${selectedCafe.name}`}
+          >
             <a href={`/cafes/${selectedCafe.slug}`}>{selectedCafe.name}</a>
-          </p>
+          </h3>
           <p>{selectedCafe.recommendation}</p>
           <address>{selectedCafe.address}</address>
           <div className="cafe-map__selected-actions">
@@ -94,6 +100,7 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
               <button
                 type="button"
                 aria-label={`Show ${cafe.name}${cafe.branch ? `, ${cafe.branch}` : ""}`}
+                aria-controls="selected-cafe-on-map"
                 aria-pressed={cafe.id === selectedCafe?.id}
                 onClick={() => setSelectedId(cafe.id)}
               >

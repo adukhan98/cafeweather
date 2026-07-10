@@ -29,10 +29,11 @@
   height: 100%;
 }
 
-.cafe-map__canvas { z-index: 1; }
+.cafe-map__canvas { z-index: var(--z-raised); }
 
 .cafe-map__skeleton,
 .cafe-map__error {
+  z-index: var(--z-dropdown);
   display: grid;
   padding: var(--space-xl);
   place-content: center;
@@ -40,6 +41,7 @@
 }
 
 .cafe-map__skeleton {
+  pointer-events: none;
   color: var(--color-burgundy);
   font-family: var(--font-display);
   font-size: var(--text-xl);
@@ -59,7 +61,7 @@
 .cafe-map__skeleton span,
 .cafe-map__error > * { position: relative; z-index: 1; }
 
-.cafe-map__error { gap: var(--space-sm); background: var(--color-clay); }
+.cafe-map__error { gap: var(--space-sm); background: var(--color-clay); pointer-events: auto; }
 .cafe-map__error p { margin: 0; }
 
 .cafe-map__selected {
@@ -71,7 +73,8 @@
   margin-inline: clamp(var(--space-sm), 4vw, var(--space-2xl)) auto;
 }
 
-.cafe-map__selected p { margin: 0; }
+.cafe-map__selected p,
+.cafe-map__selected h3 { margin: 0; }
 .cafe-map__selected-name { font-family: var(--font-display); font-size: clamp(var(--text-xl), 6vw, var(--text-3xl)); font-weight: 600; line-height: 1; }
 .cafe-map__selected address { font-size: var(--text-sm); font-style: normal; }
 
@@ -225,4 +228,5 @@
   .cafe-map__marker[data-selected="true"],
   .cafe-map__marker:hover,
   .cafe-map__marker:active { transform: rotate(-45deg); }
+  .cafe-map__selected-actions a:hover { transform: none; }
 }
