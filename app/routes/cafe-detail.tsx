@@ -10,6 +10,7 @@ import {
   CafeDetailPage,
 } from "../features/cafes/CafeDetailPage";
 import { cloudflareContext } from "../../workers/app";
+import { brand } from "../config/brand";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { cloudflare } = context.get(cloudflareContext);
@@ -23,10 +24,16 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 export function meta({ loaderData }: Route.MetaArgs) {
   const cafe = loaderData?.cafe;
   return [
-    { title: cafe ? `${cafe.name} · Café Weather` : "Café not found · Café Weather" },
+    {
+      title: cafe
+        ? `${cafe.name} · ${brand.name}`
+        : `Café not found · ${brand.name}`,
+    },
     {
       name: "description",
-      content: cafe?.recommendation ?? "Browse verified Toronto cafés with Café Weather.",
+      content:
+        cafe?.recommendation ??
+        `Browse verified Toronto cafés with ${brand.name}.`,
     },
   ];
 }

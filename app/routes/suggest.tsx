@@ -3,6 +3,7 @@ import { data, useLoaderData, type LoaderFunctionArgs } from "react-router";
 import { getVisitorIdentity } from "../.server/visitor";
 import { SuggestionForm } from "../features/community/SuggestionForm";
 import { cloudflareContext } from "../../workers/app";
+import { brand } from "../config/brand";
 
 type SuggestEnv = Env & {
   TURNSTILE_SITE_KEY?: string;
@@ -54,10 +55,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export function meta() {
   return [
-    { title: "Suggest a café · Café Weather" },
+    { title: `Suggest a café · ${brand.name}` },
     {
       name: "description",
-      content: "Suggest an independent Toronto café for Café Weather to verify.",
+      content: `Suggest an independent Toronto café for ${brand.name} to verify.`,
     },
   ];
 }

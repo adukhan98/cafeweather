@@ -6,6 +6,7 @@ import {
 } from "../.server/page-data";
 import { RoulettePage } from "../features/roulette/RoulettePage";
 import { cloudflareContext } from "../../workers/app";
+import { brand } from "../config/brand";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { cloudflare } = context.get(cloudflareContext);
@@ -17,10 +18,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Café roulette · Café Weather" },
+    { title: `Café roulette · ${brand.name}` },
     {
       name: "description",
-      content: "Let Café Weather choose one Toronto café for your current mood.",
+      content: `Let ${brand.name} make a mood-aware Toronto café choice.`,
     },
   ];
 }

@@ -2,6 +2,7 @@ import type { Route } from "./+types/cafes";
 import { CafeCatalogue } from "../features/discovery/CafeCatalogue";
 import { catalogueServiceFromEnv, prepareCatalogueData } from "../.server/page-data";
 import { cloudflareContext } from "../../workers/app";
+import { brand } from "../config/brand";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { cloudflare } = context.get(cloudflareContext);
@@ -10,10 +11,10 @@ export async function loader({ context }: Route.LoaderArgs) {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Browse Toronto cafés · Café Weather" },
+    { title: `Browse Toronto cafés · ${brand.name}` },
     {
       name: "description",
-      content: "Search and filter Café Weather’s complete Toronto café guide.",
+      content: `Search and filter ${brand.name}’s Toronto café guide.`,
     },
   ];
 }

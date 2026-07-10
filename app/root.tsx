@@ -10,6 +10,7 @@ import {
 import "./app.css";
 import "./fonts/latin-wght.css";
 import { AppShell } from "./components/AppShell";
+import { brand } from "./config/brand";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -20,7 +21,13 @@ export function Layout({ children }: { children: ReactNode }) {
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <link rel="icon" href="data:," />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <meta property="og:site_name" content={brand.name} />
+        <meta
+          property="og:image"
+          content={`${brand.canonicalOrigin}/og-meet-me-there.svg`}
+        />
+        <meta name="twitter:card" content="summary_large_image" />
         <Meta />
         <Links />
       </head>
