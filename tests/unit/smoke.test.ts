@@ -4,14 +4,15 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Home from "../../app/routes/home";
+import { cafes } from "../../app/data/cafes";
 import { cloudflareContext, createWorkerFetch } from "../../workers/app";
 
 describe("Cafe Weather scaffold", () => {
-  it("preserves the slug on a minimal Cafe record", () => {
-    const cafe = { slug: "the-library-specialty-coffee" } satisfies cafeContract.Cafe;
+  it("preserves the slug on a verified launch Cafe record", () => {
+    const cafe = cafes[0] satisfies cafeContract.Cafe;
 
     expect(cafeContract).toBeDefined();
-    expect(cafe.slug).toBe("the-library-specialty-coffee");
+    expect(cafe.slug).toBe("larrys-place-parkdale");
   });
 
   it("renders the Cafe Weather homepage on the server", () => {
