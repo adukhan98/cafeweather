@@ -9,5 +9,5 @@ coverage/
 playwright-report/
 test-results/
 .superpowers/
+.worktrees/
 .DS_Store
-
