@@ -13,7 +13,7 @@ import {
 } from "../../app/features/roulette/RoulettePage";
 import { prepareRouletteData } from "../../app/.server/page-data";
 import { parseDiscoveryParams } from "../../app/features/discovery/discovery-params";
-import { displayMatchNumber } from "../../app/features/roulette/roulette-params";
+import { displayMatchNumber } from "../../app/features/roulette/RouletteDeck";
 
 function renderPage(url: string, cafe = cafes[0]) {
   const search = new URL(url, "https://cafeweather.test").searchParams;
@@ -115,11 +115,11 @@ describe("RoulettePage", () => {
     );
   });
 
-  it("turns a seed into the same two-digit match number", () => {
-    expect(displayMatchNumber("warm-night")).toMatch(/^\d{2}$/);
+  it("turns stable seeds into pinned, distinct two-digit match numbers", () => {
+    expect(displayMatchNumber("warm-night")).toBe("76");
+    expect(displayMatchNumber("meet-me-there:mood=cozy")).toBe("04");
+    expect(displayMatchNumber("meet-me-there:all")).toBe("77");
     expect(displayMatchNumber("warm-night")).toBe(displayMatchNumber("warm-night"));
-    expect(Number(displayMatchNumber("warm-night"))).toBeGreaterThanOrEqual(1);
-    expect(Number(displayMatchNumber("warm-night"))).toBeLessThanOrEqual(99);
   });
 
   it("renders one deliberate result with reason, branch, detail, and directions", () => {
@@ -213,6 +213,7 @@ describe("RoulettePage", () => {
       </MemoryRouter>,
     );
     const control = screen.getByRole("button", { name: "Reroll" });
+    control.focus();
     const firstReveal = container.querySelector(".roulette-result");
 
     rerender(
@@ -223,6 +224,7 @@ describe("RoulettePage", () => {
 
     expect(container.querySelector(".roulette-result")).not.toBe(firstReveal);
     expect(screen.getByRole("button", { name: "Reroll" })).toBe(control);
+    expect(control).toHaveFocus();
   });
 
   it("offers clear and browse recovery when no café matches", () => {

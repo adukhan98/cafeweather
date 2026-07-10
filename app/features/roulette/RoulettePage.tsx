@@ -106,7 +106,7 @@ export function RoulettePage(props: RoulettePageProps) {
           </p>
           <RouletteDeck
             cafe={cafe}
-            seed={`${cafe.id}-${props.seed}`}
+            seed={props.seed}
             pending={rerollPending}
             onReroll={reroll}
           />
@@ -114,7 +114,7 @@ export function RoulettePage(props: RoulettePageProps) {
       ) : (
         <section className="roulette-empty">
           <p>Try clearing the filters, or browse the same combination to adjust it.</p>
-          <div className="roulette-actions">
+          <div className="roulette-empty__actions">
             <a className="action-link" href="/roulette">Clear filters and try again</a>
             <a className="text-link" href={pathWithParams("/cafes", catalogueParams)}>
               Browse with these filters

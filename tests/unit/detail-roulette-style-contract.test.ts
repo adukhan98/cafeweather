@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { readStyleSource } from "../helpers/style-source";
+import { readFileSync } from "node:fs";
 
 const css = readStyleSource();
 
 describe("detail and roulette interaction styling", () => {
+  it("keeps migrated roulette presentation out of the legacy stylesheet", () => {
+    const legacyCss = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
+    expect(legacyCss).not.toMatch(/\.roulette-(?:page|filters|reveal|actions|empty)/);
+  });
   it("limits roulette deck motion to transform and opacity", () => {
     const body = css.match(/\.roulette-result\s*\{([^}]*)\}/s)?.[1] ?? "";
     expect(body).toContain("transform:");

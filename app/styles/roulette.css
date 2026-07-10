@@ -15,6 +15,10 @@
   gap: var(--space-md);
 }
 
+.roulette-page__headline { display: grid; gap: var(--space-md); }
+
+.roulette-page__header > p:last-child { margin: 0; }
+
 .roulette-page__header h1 {
   max-width: 15ch;
   margin: var(--space-xs) 0 0;
@@ -39,6 +43,10 @@
   gap: var(--space-sm);
   list-style: none;
 }
+
+.roulette-filters li { padding: 0; border: 0; background: transparent; }
+
+.roulette-filters p { margin-block-end: 0; }
 
 .roulette-stamp {
   display: inline-flex;
@@ -160,11 +168,23 @@
 }
 
 .roulette-empty {
+  display: grid;
+  min-height: 20rem;
+  align-content: center;
+  gap: var(--space-lg);
   max-width: 46rem;
   padding: var(--space-xl);
   border: var(--rule-strong) solid currentColor;
   background: var(--color-cream);
 }
+
+.roulette-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.roulette-empty__actions a { min-height: var(--target-min); }
 
 @keyframes roulette-deal {
   from { opacity: 0; transform: rotate(2deg) translateY(var(--space-xl)); }

@@ -1,5 +1,14 @@
 import type { Cafe } from "../../contracts/cafes";
-import { displayMatchNumber } from "./roulette-params";
+import { useEffect, useRef } from "react";
+
+export function displayMatchNumber(seed: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return String((hash >>> 0) % 99 + 1).padStart(2, "0");
+}
 
 type RouletteDeckProps = {
   cafe: Cafe;
@@ -9,6 +18,16 @@ type RouletteDeckProps = {
 };
 
 export function RouletteDeck({ cafe, seed, pending, onReroll }: RouletteDeckProps) {
+  const rerollRef = useRef<HTMLButtonElement>(null);
+  const previousSeedRef = useRef(seed);
+
+  useEffect(() => {
+    if (previousSeedRef.current !== seed) {
+      previousSeedRef.current = seed;
+      rerollRef.current?.focus();
+    }
+  }, [seed]);
+
   return (
     <div className="roulette-deck" aria-busy={pending}>
       <article
@@ -40,7 +59,7 @@ export function RouletteDeck({ cafe, seed, pending, onReroll }: RouletteDeckProp
         </div>
       </article>
       <div className="roulette-deck__actions roulette-deck__reroll">
-        <button type="button" onClick={onReroll} disabled={pending}>
+        <button ref={rerollRef} type="button" onClick={onReroll} disabled={pending}>
           {pending ? "Choosing…" : "Reroll"}
         </button>
       </div>
