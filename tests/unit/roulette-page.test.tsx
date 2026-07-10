@@ -1,0 +1,149 @@
+// @vitest-environment jsdom
+
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { describe, expect, it } from "vitest";
+
+import { cafes } from "../../app/data/cafes";
+import { CatalogueService } from "../../app/.server/services/catalogue";
+import {
+  buildRouletteParams,
+  initialRouletteSeed,
+  RoulettePage,
+} from "../../app/features/roulette/RoulettePage";
+import { prepareRouletteData } from "../../app/.server/page-data";
+import { parseDiscoveryParams } from "../../app/features/discovery/discovery-params";
+
+function renderPage(url: string, cafe = cafes[0]) {
+  const search = new URL(url, "https://cafeweather.test").searchParams;
+  const state = parseDiscoveryParams(search);
+  return render(
+    <MemoryRouter initialEntries={[url]}>
+      <RoulettePage
+        cafes={cafes}
+        cafe={cafe}
+        state={state}
+        seed={search.get("seed") ?? initialRouletteSeed(state)}
+      />
+    </MemoryRouter>,
+  );
+}
+
+describe("roulette page data", () => {
+  const service = new CatalogueService();
+
+  it.each([
+    ["mood", "coffee-nerd", "moods"],
+    ["neighborhood", "Ossington", "neighborhood"],
+    ["offering", "matcha", "offerings"],
+  ] as const)("respects the active %s filter", async (key, value, cafeField) => {
+    const result = await prepareRouletteData(
+      service,
+      new URL(`https://cafeweather.test/roulette?${key}=${encodeURIComponent(value)}`),
+    );
+
+    expect(result.cafe).not.toBeNull();
+    if (cafeField === "neighborhood") {
+      expect(result.cafe?.neighborhood).toBe(value);
+    } else {
+      expect(result.cafe?.[cafeField]).toContain(value);
+    }
+  });
+
+  it("respects combined search, mood, neighbourhood, and offering filters", async () => {
+    const result = await prepareRouletteData(
+      service,
+      new URL(
+        "https://cafeweather.test/roulette?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
+      ),
+    );
+
+    expect(result.cafe?.slug).toBe("misc-coffee-ossington");
+  });
+
+  it("is deterministic for an initial SSR request without a random seed", async () => {
+    const url = new URL("https://cafeweather.test/roulette?mood=cozy");
+    const first = await prepareRouletteData(service, url);
+    const second = await prepareRouletteData(service, url);
+
+    expect(first.seed).toBe("cafe-weather:mood=cozy");
+    expect(second.seed).toBe(first.seed);
+    expect(second.cafe?.id).toBe(first.cafe?.id);
+  });
+
+  it("passes previousId so a reroll avoids the immediate repeat", async () => {
+    const initial = await prepareRouletteData(
+      service,
+      new URL("https://cafeweather.test/roulette?mood=cozy&seed=first"),
+    );
+    const rerolled = await prepareRouletteData(
+      service,
+      new URL(
+        `https://cafeweather.test/roulette?mood=cozy&seed=second&previousId=${initial.cafe?.id}`,
+      ),
+    );
+
+    expect(rerolled.cafe).not.toBeNull();
+    expect(rerolled.cafe?.id).not.toBe(initial.cafe?.id);
+  });
+});
+
+describe("RoulettePage", () => {
+  it("renders one deliberate result with reason, branch, detail, and directions", () => {
+    const match = cafes.find((cafe) => cafe.slug === "misc-coffee-ossington")!;
+    renderPage("/roulette?mood=coffee-nerd", match);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Your café is Misc Coffee." })).toBeInTheDocument();
+    expect(screen.getByText("Ossington · Ossington")).toBeInTheDocument();
+    expect(screen.getByText(match.recommendation)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See café details" })).toHaveAttribute(
+      "href",
+      `/cafes/${match.slug}`,
+    );
+    expect(screen.getByRole("link", { name: /directions to Misc Coffee/i })).toHaveAttribute(
+      "href",
+      match.mapsUrl,
+    );
+  });
+
+  it("lists active filters and links to the shared catalogue semantics", () => {
+    renderPage("/roulette?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over");
+
+    expect(screen.getByRole("region", { name: "Roulette filters" })).toHaveTextContent(
+      "Search: Misc",
+    );
+    expect(screen.getByRole("region", { name: "Roulette filters" })).toHaveTextContent(
+      "Coffee nerd",
+    );
+    expect(screen.getByRole("link", { name: "Change active filters" })).toHaveAttribute(
+      "href",
+      "/cafes?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
+    );
+  });
+
+  it("preserves every active filter when building a reroll URL", () => {
+    const state = parseDiscoveryParams(
+      new URLSearchParams(
+        "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
+      ),
+    );
+
+    expect(buildRouletteParams(state, "fresh-seed", "misc-coffee-ossington").toString()).toBe(
+      "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over&seed=fresh-seed&previousId=misc-coffee-ossington",
+    );
+  });
+
+  it("offers clear and browse recovery when no café matches", () => {
+    renderPage("/roulette?q=does-not-exist", null);
+
+    expect(screen.getByRole("heading", { name: "No café fits those filters yet." })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Clear filters and try again" })).toHaveAttribute(
+      "href",
+      "/roulette",
+    );
+    expect(screen.getByRole("link", { name: "Browse with these filters" })).toHaveAttribute(
+      "href",
+      "/cafes?q=does-not-exist",
+    );
+  });
+});
