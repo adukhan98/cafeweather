@@ -66,7 +66,11 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
         <ul aria-label="Cafés on this map">
           {cafes.map((cafe) => (
             <li key={cafe.id} data-selected={cafe.id === selectedCafe?.id}>
-              <button type="button" onClick={() => setSelectedId(cafe.id)}>
+              <button
+                type="button"
+                aria-pressed={cafe.id === selectedCafe?.id}
+                onClick={() => setSelectedId(cafe.id)}
+              >
                 <span>{cafe.name}</span>
                 <span>
                   {cafe.branch ? `${cafe.branch} · ` : ""}
