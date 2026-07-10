@@ -121,6 +121,12 @@ describe("community UI style contract", () => {
     expect(communityCss).toContain(".suggest-page[data-tone=\"burgundy\"]");
     expect(communityCss).toContain(".suggestion-form__verification-status");
     expect(communityCss).toContain(".suggestion-form__success-stamp");
+    expect(
+      contrast(tokenHex("espresso"), tokenHex("honey")),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(communityCss).toMatch(
+      /\.suggestion-form__success-stamp\s*\{[^}]*color: var\(--color-espresso\)/s,
+    );
     expect(communityCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
     expect(communityCss).not.toMatch(/#[0-9a-f]{3,8}|rgb\(|hsl\(|gradient\(|emoji/gi);
     expect(communityCss).toMatch(

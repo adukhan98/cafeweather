@@ -257,7 +257,7 @@
   width: fit-content;
   padding: var(--space-xs) var(--space-sm);
   border: var(--rule-strong) solid var(--color-success);
-  color: var(--color-success);
+  color: var(--color-espresso);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   transform: rotate(-1deg);

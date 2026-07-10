@@ -41,6 +41,7 @@ describe("CafeMap fallback", () => {
       "cafe-map__error",
     );
     expect(within(map).getByText(/does not provide WebGL/)).toBeInTheDocument();
+    expect(within(map).getByText(/Use the complete café index with the map\./)).toBeVisible();
     expect(
       within(map).getByRole("list", { name: "Cafés on this map" }).children,
     ).toHaveLength(3);

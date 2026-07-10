@@ -49,6 +49,15 @@ describe("ReactionBar", () => {
     render(<ReactionBar slug="cafe-a" api={api({ getReactions })} />);
 
     expect(await screen.findByText("The notes are unavailable right now.")).toBeVisible();
+    const failureRegions = [
+      ...screen.getAllByRole("alert"),
+      ...screen.getAllByRole("status"),
+    ]
+      .filter((region) => region.textContent?.includes("That reaction could not be saved."));
+    expect(failureRegions).toHaveLength(1);
+    expect(screen.getByRole("status")).not.toHaveTextContent(
+      "That reaction could not be saved.",
+    );
     await user.click(screen.getByRole("button", { name: "Try reactions again" }));
     expect(getReactions).toHaveBeenCalledTimes(2);
   });

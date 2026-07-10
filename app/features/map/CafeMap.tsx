@@ -45,7 +45,7 @@ export function CafeMap({ cafes }: { cafes: readonly Cafe[] }) {
           <div className="cafe-map__error" role="status">
             <span className="cafe-map__state-mark" aria-hidden="true" />
             <p><strong>The map missed the meeting.</strong></p>
-            <p>{errorMessage} Use the complete café index beside the map.</p>
+            <p>{errorMessage} Use the complete café index with the map.</p>
           </div>
         ) : null}
         {hydrated ? (

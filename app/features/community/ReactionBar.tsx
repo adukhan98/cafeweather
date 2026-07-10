@@ -120,7 +120,7 @@ export function ReactionBar({
         if (activeScope.current !== scope || isAbort(error)) return;
         const message = failureCopy(error);
         setLoadError(message);
-        setAnnouncement(message);
+        setAnnouncement("");
       });
 
     return () => {
@@ -274,7 +274,7 @@ export function ReactionBar({
         aria-live="polite"
         aria-atomic="true"
       >
-        {announcement || "Community reactions ready."}
+        {announcement || (loadError ? "" : "Community reactions ready.")}
       </p>
     </div>
   );
