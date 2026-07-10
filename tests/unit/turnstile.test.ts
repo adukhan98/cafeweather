@@ -129,4 +129,46 @@ describe("Turnstile verification", () => {
       code: "turnstile_unavailable",
     });
   });
+
+  it.each([
+    ["array", []],
+    ["empty object", {}],
+    ["string success", { success: "true" }],
+    ["numeric success", { success: 1 }],
+    ["missing hostname", { success: true, action: "suggestion" }],
+    [
+      "missing action",
+      { success: true, hostname: "cafe-weather.example" },
+    ],
+  ])(
+    "classifies malformed %s responses as unavailable",
+    async (_label, payload) => {
+      vi.stubGlobal("fetch", vi.fn(async () => Response.json(payload)));
+
+      await expect(
+        verifyTurnstileRemote({
+          secret: "secret",
+          token: "token",
+          expectedHostname: "cafe-weather.example",
+          expectedAction: "suggestion",
+        }),
+      ).rejects.toMatchObject({ name: "TurnstileUnavailableError" });
+    },
+  );
+
+  it("treats an explicit boolean failure as a valid failed challenge", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ success: false })),
+    );
+
+    await expect(
+      verifyTurnstileRemote({
+        secret: "secret",
+        token: "token",
+        expectedHostname: "cafe-weather.example",
+        expectedAction: "suggestion",
+      }),
+    ).resolves.toBe(false);
+  });
 });

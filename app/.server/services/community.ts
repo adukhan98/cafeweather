@@ -65,20 +65,28 @@ export async function verifyTurnstileRemote({
       { cause: error },
     );
   }
-  if (!decoded || typeof decoded !== "object") {
+  if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
     throw new TurnstileUnavailableError(
       "Turnstile verification returned an invalid response.",
     );
   }
-  const result = decoded as {
-    success?: boolean;
-    hostname?: string;
-    action?: string;
-  };
+  const result = decoded as Record<string, unknown>;
+  if (typeof result.success !== "boolean") {
+    throw new TurnstileUnavailableError(
+      "Turnstile verification returned an invalid response.",
+    );
+  }
+  if (!result.success) return false;
+  if (
+    typeof result.hostname !== "string" ||
+    typeof result.action !== "string"
+  ) {
+    throw new TurnstileUnavailableError(
+      "Turnstile verification returned an invalid response.",
+    );
+  }
   return (
-    result.success === true &&
-    result.hostname === expectedHostname &&
-    result.action === expectedAction
+    result.hostname === expectedHostname && result.action === expectedAction
   );
 }
 
