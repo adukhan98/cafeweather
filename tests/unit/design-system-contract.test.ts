@@ -33,7 +33,7 @@ function declarationsFor(selector: string) {
   );
 }
 
-describe("Café Weather design-system contract", () => {
+describe("Meet Me There design-system contract", () => {
   it("records the approved Design Taste dials in CSS and Hallmark memory", () => {
     expect(css).toContain("Design Taste: variance=8 · motion=6 · density=4");
     expect(hallmarkLog[0]?.design_taste).toEqual({
@@ -57,23 +57,51 @@ describe("Café Weather design-system contract", () => {
     expect(tokens).toContain("--space-2xs: 0.25rem");
   });
 
-  it("encodes stable mobile geometry and visible main focus behavior", () => {
-    expect(declarationsFor(".masthead__toggle")).toMatchObject({ flex: "none" });
-    expect(declarationsFor(".masthead__wordmark")).toMatchObject({
-      "min-height": "var(--target-min)",
+  it("encodes stable invitation geometry and visible focus behavior", () => {
+    expect(declarationsFor(".brand-lockup__name")).toMatchObject({
+      display: "flex",
+      "font-family": "var(--font-display)",
     });
-    expect(declarationsFor(".app-shell__main:focus-visible")).toMatchObject({
+    expect(declarationsFor(".place-invitation__actions a")).toMatchObject({
+      display: "inline-flex",
+      "align-items": "center",
+    });
+    expect(declarationsFor(":focus-visible")).toMatchObject({
       outline: "var(--rule-strong) solid var(--color-focus)",
+      "outline-offset": "var(--space-2xs)",
     });
   });
 
-  it("applies one purposeful press treatment to all shell links", () => {
+  it("applies a purposeful tactile treatment to invitation actions", () => {
     const activeRule = css.match(
-      /\.masthead__wordmark:active,\s*\.masthead__desktop-nav a:active,\s*\.masthead__mobile-nav a:active,\s*\.site-footer__links a:active\s*\{([^}]*)\}/,
+      /\.place-invitation__actions a:active,\s*\.brand-lockup__name:active\s*\{([^}]*)\}/,
     );
 
-    expect(activeRule?.[1]).toContain("color: var(--color-accent-hover)");
-    expect(activeRule?.[1]).toContain("transform: translateY(var(--rule-hair))");
+    expect(activeRule?.[1]).toContain("transform: translateY(var(--rule-strong))");
+  });
+
+  it("maps every scene tone to a token and removes spatial reduced motion", () => {
+    for (const tone of [
+      "espresso",
+      "cream",
+      "terracotta",
+      "honey",
+      "clay",
+      "burgundy",
+    ]) {
+      expect(css).toContain(
+        `.scene[data-tone="${tone}"] { background: var(--color-${tone}); }`,
+      );
+    }
+
+    const reducedMotion = css.slice(
+      css.lastIndexOf("@media (prefers-reduced-motion: reduce)"),
+    );
+    expect(reducedMotion).toContain('[data-motion="reveal"]');
+    expect(reducedMotion).toContain("transform: none");
+    expect(reducedMotion).toContain(
+      "transition: opacity var(--dur-micro) linear",
+    );
   });
 
   it("loads only the local Latin Fontsource declaration bundle", () => {
