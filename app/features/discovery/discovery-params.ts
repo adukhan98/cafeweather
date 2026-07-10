@@ -7,6 +7,7 @@ export type DiscoveryState = Readonly<{
   moods: readonly string[];
   neighborhoods: readonly string[];
   offerings: readonly string[];
+  attributes: readonly string[];
   view: DiscoveryView;
 }>;
 
@@ -22,6 +23,7 @@ export function parseDiscoveryParams(params: URLSearchParams): DiscoveryState {
     moods: uniqueSorted(params.getAll("mood")),
     neighborhoods: uniqueSorted(params.getAll("neighborhood")),
     offerings: uniqueSorted(params.getAll("offering")),
+    attributes: uniqueSorted(params.getAll("attribute")),
     view: params.get("view") === "map" ? "map" : "list",
   };
 }
@@ -40,6 +42,9 @@ export function serializeDiscoveryParams(
   for (const offering of uniqueSorted(state.offerings)) {
     params.append("offering", offering);
   }
+  for (const attribute of uniqueSorted(state.attributes)) {
+    params.append("attribute", attribute);
+  }
   if (state.view === "map") params.set("view", "map");
 
   return params;
@@ -51,5 +56,6 @@ export function stateToFilters(state: DiscoveryState): CafeFilters {
     moods: state.moods,
     neighborhoods: state.neighborhoods,
     offerings: state.offerings,
+    attributes: state.attributes,
   };
 }

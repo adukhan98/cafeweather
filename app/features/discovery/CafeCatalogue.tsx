@@ -13,8 +13,10 @@ import {
   type DiscoveryState,
 } from "./discovery-params";
 import { formatFacet, getDiscoveryFacets } from "./facets";
+import type { CatalogueSource } from "../../.server/services/catalogue";
+import { DataSourceNotice } from "./DataSourceNotice";
 
-type FacetKey = "moods" | "neighborhoods" | "offerings";
+type FacetKey = "moods" | "neighborhoods" | "offerings" | "attributes";
 type CommitMode = "push" | "debounced-replace";
 type ActiveFilter = Readonly<{
   key: string;
@@ -29,6 +31,7 @@ const emptyDiscoveryState: DiscoveryState = {
   moods: [],
   neighborhoods: [],
   offerings: [],
+  attributes: [],
   view: "list",
 };
 
@@ -74,7 +77,13 @@ function FacetDisclosure({
   );
 }
 
-export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
+export function CafeCatalogue({
+  cafes,
+  source,
+}: {
+  cafes: readonly Cafe[];
+  source?: CatalogueSource;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const routeKey = searchParams.toString();
   const initialStateRef = useRef(parseDiscoveryParams(searchParams));
@@ -219,10 +228,18 @@ export function CafeCatalogue({ cafes }: { cafes: readonly Cafe[] }) {
       facet: "offerings" as const,
       value,
     })),
+    ...state.attributes.map((value) => ({
+      key: `attribute-${value}`,
+      label: formatFacet(value),
+      aria: `Clear practical attribute filter ${formatFacet(value)}`,
+      facet: "attributes" as const,
+      value,
+    })),
   ];
 
   return (
     <div className="catalogue-page">
+      <DataSourceNotice source={source} />
       <header className="catalogue-page__header">
         <h1>Every café in the guide.</h1>
         <p>

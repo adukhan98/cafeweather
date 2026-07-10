@@ -21,6 +21,8 @@ import { filterCafes } from "../../domain/filter-cafes";
 import { CafeRow } from "../cafes/CafeRow";
 import { CafeMap } from "../map/CafeMap";
 import { getDiscoveryFacets } from "./facets";
+import type { CatalogueSource } from "../../.server/services/catalogue";
+import { DataSourceNotice } from "./DataSourceNotice";
 
 type OccasionOption = Readonly<{
   id: string;
@@ -182,7 +184,13 @@ function HomeSearch() {
   return useInRouterContext() ? <RoutedHomeSearch /> : <SearchForm />;
 }
 
-export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
+export function DiscoveryHome({
+  cafes,
+  source,
+}: {
+  cafes: readonly Cafe[];
+  source?: CatalogueSource;
+}) {
   const [occasionId, setOccasionId] = useState(occasionOptions[0].id);
   const selectedOccasion = occasionOptions.find(
     (option) => option.id === occasionId,
@@ -202,6 +210,7 @@ export function DiscoveryHome({ cafes }: { cafes: readonly Cafe[] }) {
 
   return (
     <div className="discovery-home">
+      <DataSourceNotice source={source} />
       <section className="discovery-hero">
         <div className="discovery-hero__copy">
           <h1>Toronto cafés for the mood you’re in.</h1>

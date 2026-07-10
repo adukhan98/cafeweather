@@ -30,7 +30,7 @@ describe("CafeDetailPage", () => {
       "href",
       larrys.mapsUrl,
     );
-    expect(screen.getByRole("link", { name: /view verification source/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /view venue verification source/i })).toHaveAttribute(
       "href",
       larrys.sourceUrl,
     );
@@ -49,10 +49,23 @@ describe("CafeDetailPage", () => {
 
     expect(
       screen.getByText(
-        /the source supports Bloom Cafe in Toronto, but it did not name this exact Wellesley branch/i,
+        /the original recommendation supports Bloom Cafe in Toronto but did not name a branch\. This Wellesley address was verified independently/i,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/supports this exact branch/i)).not.toBeInTheDocument();
+  });
+
+  it("renders deterministic nearby alternatives from the same catalogue", () => {
+    const current = cafe("larrys-place-parkdale");
+    const nearby = [cafe("cafe23-queen-west"), cafe("mallo-coffee-bar-bathurst")];
+    render(<CafeDetailPage cafe={current} nearby={nearby} />);
+
+    const list = screen.getByRole("list", { name: "Nearby café alternatives" });
+    expect(within(list).getByRole("link", { name: "Cafe23" })).toHaveAttribute(
+      "href",
+      "/cafes/cafe23-queen-west",
+    );
+    expect(within(list).getByRole("link", { name: "Mallo Coffee Bar" })).toBeInTheDocument();
   });
 
   it("shows moods and offerings without inventing unsupported venue claims", () => {
@@ -71,6 +84,14 @@ describe("CafeDetailPage", () => {
 
     expect(boundary).toHaveAttribute("id", "community-reactions");
     expect(boundary).toHaveAttribute("aria-labelledby", "community-reactions-title");
+  });
+
+  it("discloses when the verified snapshot fallback is in use", () => {
+    render(<CafeDetailPage cafe={cafe("larrys-place-parkdale")} source="seed" />);
+
+    expect(screen.getByLabelText("Catalogue status")).toHaveTextContent(
+      "Verified snapshot in use.",
+    );
   });
 });
 

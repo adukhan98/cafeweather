@@ -1,9 +1,12 @@
 import { ArrowRight, ArrowsClockwise, MapPin } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import type { Cafe } from "../../contracts/cafes";
 import type { DiscoveryState } from "../discovery/discovery-params";
 import { formatFacet } from "../discovery/facets";
+import type { CatalogueSource } from "../../.server/services/catalogue";
+import { DataSourceNotice } from "../discovery/DataSourceNotice";
 import {
   buildCatalogueParams,
   buildRouletteParams,
@@ -29,29 +32,42 @@ function activeFilters(state: DiscoveryState): string[] {
     ...state.moods.map(formatFacet),
     ...state.neighborhoods.map(formatFacet),
     ...state.offerings.map(formatFacet),
+    ...state.attributes.map(formatFacet),
   ];
 }
 
+function locationLabel(cafe: Cafe): string {
+  if (!cafe.branch || cafe.branch === cafe.neighborhood) return cafe.neighborhood;
+  return `${cafe.branch} · ${cafe.neighborhood}`;
+}
+
 type RoulettePageProps = {
-  cafes: readonly Cafe[];
   cafe: Cafe | null;
   state: DiscoveryState;
   seed: string;
+  source?: CatalogueSource;
 };
 
 export function RoulettePage(props: RoulettePageProps) {
   const { cafe, state } = props;
   const navigate = useNavigate();
+  const [rerollRequested, setRerollRequested] = useState(false);
+  const rerollPending = rerollRequested;
   const catalogueParams = buildCatalogueParams(state);
   const filters = activeFilters(state);
 
+  useEffect(() => setRerollRequested(false), [props.seed]);
+
   const reroll = () => {
+    if (rerollPending) return;
+    setRerollRequested(true);
     const params = buildRouletteParams(state, freshSeed(), cafe?.id);
     void navigate(pathWithParams("/roulette", params));
   };
 
   return (
     <div className="roulette-page">
+      <DataSourceNotice source={props.source} />
       <header className="roulette-page__header">
         <p className="eyebrow">Café roulette · one considered pick</p>
         <h1>{cafe ? `Your café is ${cafe.name}.` : "No café fits those filters yet."}</h1>
@@ -76,10 +92,14 @@ export function RoulettePage(props: RoulettePageProps) {
       </section>
 
       {cafe ? (
-        <article className="roulette-reveal" key={`${cafe.id}-${props.seed}`}>
+        <>
+          <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+            {rerollPending ? "Choosing another café." : `Selected ${cafe.name}.`}
+          </p>
+          <article className="roulette-reveal" aria-busy={rerollPending}>
           <p className="section-number">Today’s pick</p>
           <div className="roulette-reveal__identity">
-            <p>{cafe.branch ? `${cafe.branch} · ` : ""}{cafe.neighborhood}</p>
+            <p>{locationLabel(cafe)}</p>
             <h2>{cafe.name}</h2>
           </div>
           <p className="roulette-reveal__reason">{cafe.recommendation}</p>
@@ -98,12 +118,18 @@ export function RoulettePage(props: RoulettePageProps) {
               <MapPin size={18} aria-hidden="true" />
               Directions
             </a>
-            <button type="button" className="text-link" onClick={reroll}>
+            <button
+              type="button"
+              className="text-link"
+              onClick={reroll}
+              disabled={rerollPending}
+            >
               <ArrowsClockwise size={18} aria-hidden="true" />
-              Reroll
+              {rerollPending ? "Choosing…" : "Reroll"}
             </button>
           </div>
-        </article>
+          </article>
+        </>
       ) : (
         <section className="roulette-empty">
           <p>Try clearing the filters, or browse the same combination to adjust it.</p>

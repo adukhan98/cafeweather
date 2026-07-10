@@ -4,8 +4,8 @@ import { createRenderErrorHandler } from "../../app/entry.server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import Home from "../../app/routes/home";
 import { cafes } from "../../app/data/cafes";
+import { DiscoveryHome } from "../../app/features/discovery/DiscoveryHome";
 import { cloudflareContext, createWorkerFetch } from "../../workers/app";
 
 describe("Cafe Weather scaffold", () => {
@@ -18,7 +18,7 @@ describe("Cafe Weather scaffold", () => {
 
   it("renders the Cafe Weather homepage on the server", () => {
     const markup = renderToStaticMarkup(
-      createElement(AppShell, null, createElement(Home)),
+      createElement(AppShell, null, createElement(DiscoveryHome, { cafes })),
     );
 
     expect(markup).toContain("Café Weather");

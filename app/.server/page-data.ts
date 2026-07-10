@@ -21,8 +21,41 @@ export function catalogueServiceFromEnv(env: Env): CatalogueService {
 export async function prepareCafeDetailData(
   service: CatalogueService,
   slug: string,
-): Promise<{ cafe: Cafe | null; source: CatalogueSource }> {
-  return service.findBySlug(slug);
+): Promise<{
+  cafe: Cafe | null;
+  nearby: readonly Cafe[];
+  source: CatalogueSource;
+}> {
+  const catalogue = await service.list();
+  const cafe = catalogue.cafes.find((entry) => entry.slug === slug) ?? null;
+  if (!cafe) return { cafe: null, nearby: [], source: catalogue.source };
+
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const distance = (candidate: Cafe) => {
+    const latitude = toRadians(candidate.lat - cafe.lat);
+    const longitude =
+      toRadians(candidate.lng - cafe.lng) *
+      Math.cos(toRadians((candidate.lat + cafe.lat) / 2));
+    return latitude * latitude + longitude * longitude;
+  };
+  const nearby = catalogue.cafes
+    .filter((entry) => entry.id !== cafe.id)
+    .sort((left, right) => {
+      const leftNeighborhood = left.neighborhood === cafe.neighborhood ? 0 : 1;
+      const rightNeighborhood = right.neighborhood === cafe.neighborhood ? 0 : 1;
+      if (leftNeighborhood !== rightNeighborhood) {
+        return leftNeighborhood - rightNeighborhood;
+      }
+      const byDistance = distance(left) - distance(right);
+      return byDistance || left.name.localeCompare(right.name, "en-CA");
+    })
+    .slice(0, 3);
+
+  return { cafe, nearby, source: catalogue.source };
+}
+
+export function prepareCatalogueData(service: CatalogueService) {
+  return service.list();
 }
 
 export async function prepareRouletteData(

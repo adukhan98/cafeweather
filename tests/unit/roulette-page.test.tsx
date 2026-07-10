@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
@@ -20,7 +21,6 @@ function renderPage(url: string, cafe = cafes[0]) {
   return render(
     <MemoryRouter initialEntries={[url]}>
       <RoulettePage
-        cafes={cafes}
         cafe={cafe}
         state={state}
         seed={search.get("seed") ?? initialRouletteSeed(state)}
@@ -61,6 +61,16 @@ describe("roulette page data", () => {
     expect(result.cafe?.slug).toBe("misc-coffee-ossington");
   });
 
+  it("honors a direct practical-attribute filter even when launch data has no matches", async () => {
+    const result = await prepareRouletteData(
+      service,
+      new URL("https://cafeweather.test/roulette?attribute=patio"),
+    );
+
+    expect(result.cafe).toBeNull();
+    expect(result.state.attributes).toEqual(["patio"]);
+  });
+
   it("is deterministic for an initial SSR request without a random seed", async () => {
     const url = new URL("https://cafeweather.test/roulette?mood=cozy");
     const first = await prepareRouletteData(service, url);
@@ -94,7 +104,7 @@ describe("RoulettePage", () => {
     renderPage("/roulette?mood=coffee-nerd", match);
 
     expect(screen.getByRole("heading", { level: 1, name: "Your café is Misc Coffee." })).toBeInTheDocument();
-    expect(screen.getByText("Ossington · Ossington")).toBeInTheDocument();
+    expect(screen.getByText("Ossington")).toBeInTheDocument();
     expect(screen.getByText(match.recommendation)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "See café details" })).toHaveAttribute(
       "href",
@@ -124,13 +134,26 @@ describe("RoulettePage", () => {
   it("preserves every active filter when building a reroll URL", () => {
     const state = parseDiscoveryParams(
       new URLSearchParams(
-        "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
+        "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over&attribute=patio",
       ),
     );
 
     expect(buildRouletteParams(state, "fresh-seed", "misc-coffee-ossington").toString()).toBe(
-      "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over&seed=fresh-seed&previousId=misc-coffee-ossington",
+      "q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over&attribute=patio&seed=fresh-seed&previousId=misc-coffee-ossington",
     );
+  });
+
+  it("keeps the reroll control focused, announces the result, and blocks repeat clicks", async () => {
+    const user = userEvent.setup();
+    renderPage("/roulette?mood=cozy", cafes.find((cafe) => cafe.slug === "nabulu-coffee-st-joseph")!);
+
+    const reroll = screen.getByRole("button", { name: "Reroll" });
+    reroll.focus();
+    await user.click(reroll);
+
+    expect(reroll).toHaveFocus();
+    expect(reroll).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Choosing another café.");
   });
 
   it("offers clear and browse recovery when no café matches", () => {
@@ -144,6 +167,25 @@ describe("RoulettePage", () => {
     expect(screen.getByRole("link", { name: "Browse with these filters" })).toHaveAttribute(
       "href",
       "/cafes?q=does-not-exist",
+    );
+  });
+
+  it("discloses the verified snapshot fallback", () => {
+    const search = new URL("https://cafeweather.test/roulette").searchParams;
+    const state = parseDiscoveryParams(search);
+    render(
+      <MemoryRouter>
+        <RoulettePage
+          cafe={cafes[0]}
+          state={state}
+          seed={initialRouletteSeed(state)}
+          source="seed"
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText("Catalogue status")).toHaveTextContent(
+      "Verified snapshot in use.",
     );
   });
 });

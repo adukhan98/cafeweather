@@ -2,6 +2,9 @@ import { ArrowLeft, ArrowSquareOut, MapPin } from "@phosphor-icons/react";
 
 import type { Cafe } from "../../contracts/cafes";
 import { formatFacet } from "../discovery/facets";
+import { CafeRow } from "./CafeRow";
+import type { CatalogueSource } from "../../.server/services/catalogue";
+import { DataSourceNotice } from "../discovery/DataSourceNotice";
 
 function verifiedDate(value: string): string {
   const date = new Date(`${value}T00:00:00Z`);
@@ -16,7 +19,7 @@ function branchVerification(cafe: Cafe): string {
     return "The source and address support this exact branch.";
   }
 
-  return `The source supports ${cafe.name} in Toronto, but it did not name this exact ${cafe.branch ?? cafe.neighborhood} branch.`;
+  return `The original recommendation supports ${cafe.name} in Toronto but did not name a branch. This ${cafe.branch ?? cafe.neighborhood} address was verified independently for the guide.`;
 }
 
 function FacetList({
@@ -35,9 +38,18 @@ function FacetList({
   );
 }
 
-export function CafeDetailPage({ cafe }: { cafe: Cafe }) {
+export function CafeDetailPage({
+  cafe,
+  nearby = [],
+  source,
+}: {
+  cafe: Cafe;
+  nearby?: readonly Cafe[];
+  source?: CatalogueSource;
+}) {
   return (
     <article className="cafe-detail">
+      <DataSourceNotice source={source} />
       <a className="text-link cafe-detail__back" href="/cafes">
         <ArrowLeft size={18} aria-hidden="true" />
         Browse every café
@@ -98,12 +110,26 @@ export function CafeDetailPage({ cafe }: { cafe: Cafe }) {
               target="_blank"
               rel="noreferrer"
             >
-              View verification source
+              View venue verification source
               <ArrowSquareOut size={16} aria-hidden="true" />
             </a>
           </div>
         </section>
       </div>
+
+      <section className="cafe-detail__nearby" aria-labelledby="nearby-title">
+        <p className="section-number">04</p>
+        <div>
+          <h2 id="nearby-title">Nearby alternatives</h2>
+          {nearby.length > 0 ? (
+            <ol className="cafe-results" aria-label="Nearby café alternatives">
+              {nearby.map((entry) => <CafeRow key={entry.id} cafe={entry} headingLevel={3} />)}
+            </ol>
+          ) : (
+            <p>No nearby verified alternative is available in this catalogue.</p>
+          )}
+        </div>
+      </section>
 
       <section
         id="community-reactions"
@@ -111,7 +137,7 @@ export function CafeDetailPage({ cafe }: { cafe: Cafe }) {
         aria-labelledby="community-reactions-title"
         data-reaction-slot
       >
-        <p className="section-number">04</p>
+        <p className="section-number">05</p>
         <div>
           <h2 id="community-reactions-title">How did this place feel?</h2>
           <p>Quick community reactions are coming in the next product pass.</p>

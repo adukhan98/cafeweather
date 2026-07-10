@@ -33,7 +33,11 @@ export function meta({ loaderData }: Route.MetaArgs) {
 
 export default function CafeDetailRoute({ loaderData }: Route.ComponentProps) {
   return loaderData.cafe ? (
-    <CafeDetailPage cafe={loaderData.cafe} />
+    <CafeDetailPage
+      cafe={loaderData.cafe}
+      nearby={loaderData.nearby}
+      source={loaderData.source}
+    />
   ) : (
     <CafeDetailNotFound />
   );
