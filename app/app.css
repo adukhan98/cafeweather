@@ -1,4 +1,4 @@
-/* Hallmark · genre: editorial · macrostructure: Ecosystem Index · theme: Garden · enrichment: code-native map later · nav: N6 · footer: Ft1
+/* Hallmark · genre: editorial · macrostructure: App Shell Foundation · theme: Garden · enrichment: none · nav: N6 · footer: Ft1
  * audience: Toronto café explorers · action: find by mood · tone: local editorial with playful roulette
  * Design Taste: variance=8 · motion=6 · density=4
  * N6 knobs: issue-line=none, wordmark=2xl, rule=double · Ft1 knobs: wordmark=2xl, tagline=roman-body, links=inline
@@ -111,10 +111,15 @@ h6 {
 }
 
 .masthead__wordmark {
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: var(--target-min);
+  max-width: calc(100% - var(--target-min) - var(--space-md));
+  align-items: center;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: clamp(var(--text-2xl), 11vw, var(--text-3xl));
+  font-size: clamp(var(--text-lg), 9vw, var(--text-2xl));
   font-weight: 500;
   letter-spacing: -0.035em;
   line-height: 0.95;
@@ -127,6 +132,7 @@ h6 {
 
 .masthead__toggle {
   display: grid;
+  flex: none;
   width: var(--target-min);
   min-width: var(--target-min);
   height: var(--target-min);
@@ -243,8 +249,9 @@ h6 {
   padding-inline: var(--page-gutter);
 }
 
-.app-shell__main:focus {
-  outline: none;
+.app-shell__main:focus-visible {
+  outline: var(--rule-strong) solid var(--color-focus);
+  outline-offset: var(--space-2xs);
 }
 
 .shell-placeholder {
@@ -338,6 +345,8 @@ h6 {
   }
 
   .masthead__wordmark {
+    flex: none;
+    max-width: none;
     font-size: clamp(var(--text-2xl), 5vw, var(--text-4xl));
   }
 

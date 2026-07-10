@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const destinations = [
   { label: "Browse", href: "/#browse" },
@@ -9,8 +9,20 @@ const destinations = [
 
 export function Masthead() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const mastheadRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const firstMobileLinkRef = useRef<HTMLAnchorElement>(null);
+
+  const closeMenu = useCallback((focusDestination: "main" | "toggle") => {
+    setMenuOpen(false);
+    queueMicrotask(() => {
+      const target =
+        focusDestination === "toggle"
+          ? toggleRef.current
+          : document.getElementById("main-content");
+      target?.focus();
+    });
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -19,25 +31,32 @@ export function Masthead() {
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      setMenuOpen(false);
-      toggleRef.current?.focus();
+      closeMenu("toggle");
+    };
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (mastheadRef.current?.contains(event.target as Node)) return;
+      closeMenu("toggle");
     };
 
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+    };
+  }, [closeMenu, menuOpen]);
 
   const toggleMenu = () => {
-    setMenuOpen((open) => {
-      if (open) queueMicrotask(() => toggleRef.current?.focus());
-      return !open;
-    });
+    if (menuOpen) {
+      closeMenu("toggle");
+      return;
+    }
+    setMenuOpen(true);
   };
 
-  const closeMenu = () => setMenuOpen(false);
-
   return (
-    <header className="masthead">
+    <header ref={mastheadRef} className="masthead">
       <div className="masthead__top-row">
         <a className="masthead__wordmark" href="/" aria-label="Café Weather home">
           Café Weather
@@ -87,7 +106,7 @@ export function Masthead() {
               <a
                 ref={index === 0 ? firstMobileLinkRef : undefined}
                 href={destination.href}
-                onClick={closeMenu}
+                onClick={() => closeMenu("main")}
               >
                 {destination.label}
                 <span aria-hidden="true">→</span>

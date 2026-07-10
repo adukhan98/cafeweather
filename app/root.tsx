@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import "@fontsource-variable/ibm-plex-sans/wght.css";
-import "@fontsource-variable/newsreader/wght.css";
 import {
   Links,
   Meta,
@@ -10,6 +8,7 @@ import {
 } from "react-router";
 
 import "./app.css";
+import "./fonts/latin-wght.css";
 import { AppShell } from "./components/AppShell";
 
 export function Layout({ children }: { children: ReactNode }) {

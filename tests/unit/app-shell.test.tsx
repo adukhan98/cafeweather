@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { renderToString } from "react-dom/server";
@@ -37,14 +43,20 @@ describe("AppShell", () => {
     ]);
   });
 
-  it("offers a skip link to the main content", () => {
+  it("moves focus to main content when the skip link is activated", async () => {
+    const user = userEvent.setup();
     renderShell();
 
-    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute(
+    const skipLink = screen.getByRole("link", { name: "Skip to content" });
+    const main = screen.getByRole("main");
+    expect(skipLink).toHaveAttribute(
       "href",
       "#main-content",
     );
-    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+    expect(main).toHaveAttribute("id", "main-content");
+
+    await user.click(skipLink);
+    expect(main).toHaveFocus();
   });
 
   it("renders every desktop destination in the primary navigation", () => {
@@ -71,6 +83,32 @@ describe("AppShell", () => {
 
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveFocus();
+  });
+
+  it("dismisses the mobile menu on an outside pointer press", async () => {
+    const user = userEvent.setup();
+    renderShell();
+    const toggle = screen.getByRole("button", { name: "Open menu" });
+
+    await user.click(toggle);
+    fireEvent.pointerDown(screen.getByRole("main"));
+
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+    expect(toggle).toHaveFocus();
+  });
+
+  it("closes mobile navigation and moves focus to main after link activation", async () => {
+    const user = userEvent.setup();
+    renderShell();
+    const toggle = screen.getByRole("button", { name: "Open menu" });
+
+    await user.click(toggle);
+    const mobileNavigation = screen.getByRole("navigation", { name: "Mobile" });
+    await user.click(within(mobileNavigation).getByRole("link", { name: "Browse" }));
+
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+    expect(screen.getByRole("main")).toHaveFocus();
+    expect(mobileNavigation).not.toBeVisible();
   });
 
   it("states the editorial source and verification date in the footer", () => {
