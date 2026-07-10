@@ -72,6 +72,22 @@ describe("filterCafes", () => {
     expect(cafes).toEqual(sourceSnapshot);
   });
 
+  it("treats empty selected arrays as reset filters", () => {
+    expect(
+      filterCafes(cafes, {
+        search: "",
+        neighborhoods: [],
+        moods: [],
+        offerings: [],
+        attributes: [],
+      }),
+    ).toEqual(cafes);
+  });
+
+  it("returns an empty array when no cafe matches", () => {
+    expect(filterCafes(cafes, { neighborhoods: ["Nowhere"] })).toEqual([]);
+  });
+
   it("uses OR within each selected facet", () => {
     const filters: CafeFilters = {
       moods: ["social", "lively"],

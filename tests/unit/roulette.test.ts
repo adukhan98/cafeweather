@@ -32,28 +32,32 @@ async function expectedLowestDigestId(
   seed: string,
 ): Promise<string> {
   const canonicalSeed = seed.normalize("NFC");
-  const encoder = new TextEncoder();
   const ranked = await Promise.all(
     cafes.map(async ({ id }) => {
-      const digest = await crypto.subtle.digest(
-        "SHA-256",
-        encoder.encode(`${canonicalSeed}\u0000${id}`),
-      );
-      const hex = Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-      ).join("");
+      const digest = await sha256Hex(`${canonicalSeed}\u0000${id}`);
 
-      return { hex, id };
+      return { digest, id };
     }),
   );
 
   ranked.sort((left, right) =>
-    left.hex === right.hex
+    left.digest === right.digest
       ? left.id.localeCompare(right.id)
-      : left.hex.localeCompare(right.hex),
+      : left.digest.localeCompare(right.digest),
   );
 
   return ranked[0].id;
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 const cafes = [
@@ -90,6 +94,30 @@ describe("selectRouletteCafe", () => {
     expect(second?.id).toBe(expectedId);
   });
 
+  it("matches the hard-coded SHA-256 golden vector", async () => {
+    const vector = {
+      seed: "2026-07-09:afternoon",
+      expectedId: "charlie",
+      expectedDigest:
+        "654b3cf8a0f93e40cb7ba5b561262a5c7a751c6e5748f7f010a42079508b2c1c",
+    } as const;
+    const selected = await selectRouletteCafe(cafes, {}, vector.seed);
+
+    await expect(
+      sha256Hex(`${vector.seed}\u0000${vector.expectedId}`),
+    ).resolves.toBe(vector.expectedDigest);
+    expect(selected?.id).toBe(vector.expectedId);
+  });
+
+  it("is invariant to catalogue input order", async () => {
+    const seed = "2026-07-09:afternoon";
+    const forward = await selectRouletteCafe(cafes, {}, seed);
+    const reversed = await selectRouletteCafe([...cafes].reverse(), {}, seed);
+
+    expect(forward?.id).toBe("charlie");
+    expect(reversed?.id).toBe("charlie");
+  });
+
   it("canonicalizes canonically equivalent Unicode seeds", async () => {
     const composed = await selectRouletteCafe(cafes, {}, "caf\u00e9");
     const decomposed = await selectRouletteCafe(cafes, {}, "cafe\u0301");
@@ -99,12 +127,7 @@ describe("selectRouletteCafe", () => {
 
   it("avoids the previous cafe when more than one candidate remains", async () => {
     const initial = await selectRouletteCafe(cafes, {}, "today");
-    const rerolled = await selectRouletteCafe(
-      cafes,
-      {},
-      "today",
-      initial?.id,
-    );
+    const rerolled = await selectRouletteCafe(cafes, {}, "today", initial?.id);
 
     expect(rerolled).not.toBeNull();
     expect(rerolled?.id).not.toBe(initial?.id);

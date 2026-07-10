@@ -8,7 +8,7 @@ export type CafeVerificationStatus = "verified" | "branch-unspecified";
 
 export type CafeCoordinateConfidence = "poi" | "address";
 
-export type Cafe = Readonly<{
+type CafeDetails = Readonly<{
   id: string;
   slug: string;
   name: string;
@@ -19,8 +19,6 @@ export type Cafe = Readonly<{
   lat: number;
   lng: number;
   coordinateConfidence: CafeCoordinateConfidence;
-  branchSpecificity: CafeBranchSpecificity;
-  verificationStatus: CafeVerificationStatus;
   moods: readonly string[];
   offerings: readonly string[];
   attributes: readonly string[];
@@ -29,3 +27,16 @@ export type Cafe = Readonly<{
   mapsUrl: string;
   verifiedAt: string;
 }>;
+
+type ExplicitCafeVerification = Readonly<{
+  branchSpecificity: "explicit";
+  verificationStatus: "verified";
+}>;
+
+type BranchUnspecifiedCafeVerification = Readonly<{
+  branchSpecificity: Exclude<CafeBranchSpecificity, "explicit">;
+  verificationStatus: "branch-unspecified";
+}>;
+
+export type Cafe = CafeDetails &
+  (ExplicitCafeVerification | BranchUnspecifiedCafeVerification);
