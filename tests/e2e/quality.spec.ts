@@ -37,7 +37,7 @@ test("every launch viewport avoids overflow and wrapped clickable labels", async
       await assertAppShellGeometry(page, width);
       const failures = await page.evaluate(() => {
         const selectors =
-          ".action-link, .text-link, .text-button, .reset-button, .masthead a, .site-footer a, .view-switch label, .reaction-choice, .suggestion-form button, summary";
+          ".action-link, .text-link, .text-button, .reset-button, .masthead a, .site-footer a, .view-switch label, .reaction-coaster, .suggestion-form button, summary";
         return Array.from(document.querySelectorAll<HTMLElement>(selectors))
           .filter((element) => {
             const style = getComputedStyle(element);
