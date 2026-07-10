@@ -377,6 +377,7 @@ describe("Cafe Weather API handlers", () => {
     expect(second.status).toBe(200);
     expect(limited.status).toBe(429);
     expect((await limited.json()).error.code).toBe("rate_limited");
+    expect(limited.headers.get("retry-after")).toMatch(/^\d+$/u);
     expect(communityRepository.rateLimitAttempts[0].keyHash).toMatch(/^[a-f0-9]{64}$/u);
     expect(JSON.stringify(communityRepository.rateLimitAttempts)).not.toContain(
       "203.0.113.42",
@@ -422,6 +423,58 @@ describe("Cafe Weather API handlers", () => {
 
     expect(response.status).toBe(503);
     expect((await response.json()).error.code).toBe("rate_limit_unavailable");
+  });
+
+  it("fails closed on a production visitor secret shorter than 32 UTF-8 bytes", async () => {
+    const communityRepository = new MemoryCommunityRepository();
+    const handler = createApiHandler({
+      communityRepository,
+      visitorSecret: "too-short",
+      production: true,
+    });
+
+    const response = await handler(
+      new Request(
+        `${origin}/api/v1/cafes/larrys-place-parkdale/reactions/cozy`,
+        {
+          method: "PUT",
+          headers: {
+            origin,
+            "cf-connecting-ip": "203.0.113.45",
+          },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe(
+      "visitor_identity_unavailable",
+    );
+    expect(communityRepository.reactions).toHaveLength(0);
+  });
+
+  it("accepts a production visitor secret with at least 32 UTF-8 bytes", async () => {
+    const communityRepository = new MemoryCommunityRepository();
+    const handler = createApiHandler({
+      communityRepository,
+      visitorSecret: "x".repeat(32),
+      production: true,
+    });
+
+    const response = await handler(
+      new Request(
+        `${origin}/api/v1/cafes/larrys-place-parkdale/reactions/cozy`,
+        {
+          method: "PUT",
+          headers: {
+            origin,
+            "cf-connecting-ip": "203.0.113.46",
+          },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("fails closed for production suggestions without Turnstile configuration", async () => {

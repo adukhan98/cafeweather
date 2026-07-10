@@ -42,7 +42,7 @@ export async function verifyTurnstileRemote({
   try {
     response = await fetch(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body },
+      { method: "POST", body, signal: AbortSignal.timeout(5_000) },
     );
   } catch (error) {
     throw new TurnstileUnavailableError(
@@ -56,7 +56,21 @@ export async function verifyTurnstileRemote({
     );
   }
 
-  const result = (await response.json()) as {
+  let decoded: unknown;
+  try {
+    decoded = await response.json();
+  } catch (error) {
+    throw new TurnstileUnavailableError(
+      "Turnstile verification returned an invalid response.",
+      { cause: error },
+    );
+  }
+  if (!decoded || typeof decoded !== "object") {
+    throw new TurnstileUnavailableError(
+      "Turnstile verification returned an invalid response.",
+    );
+  }
+  const result = decoded as {
     success?: boolean;
     hostname?: string;
     action?: string;
@@ -172,6 +186,8 @@ export class CommunityService {
         429,
         "rate_limited",
         "Too many community requests. Please try again later.",
+        undefined,
+        { "retry-after": String(result.retryAfterSeconds) },
       );
     }
     return result;

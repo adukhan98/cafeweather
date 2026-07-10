@@ -6,6 +6,7 @@ export class HttpError extends Error {
     readonly code: string,
     message: string,
     readonly fieldErrors?: FieldErrors,
+    readonly responseHeaders?: HeadersInit,
   ) {
     super(message);
   }
@@ -21,6 +22,6 @@ export function errorResponse(error: HttpError, requestId: string): Response {
         requestId,
       },
     },
-    { status: error.status },
+    { status: error.status, headers: error.responseHeaders },
   );
 }

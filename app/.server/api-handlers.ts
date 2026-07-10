@@ -193,6 +193,28 @@ function isProductionRequest(request: Request, configured?: boolean): boolean {
   );
 }
 
+function visitorSecretForWrite(
+  request: Request,
+  dependencies: ApiDependencies,
+): { secret: string; production: boolean } {
+  const production = isProductionRequest(request, dependencies.production);
+  const secret = dependencies.visitorSecret;
+  // Exact production rule: the configured string must contain at least 32
+  // UTF-8 bytes. Hex/base64 secrets are accepted as their encoded text when
+  // that text itself meets the same 32-byte minimum.
+  if (
+    !secret ||
+    (production && new TextEncoder().encode(secret).byteLength < 32)
+  ) {
+    throw new HttpError(
+      503,
+      "visitor_identity_unavailable",
+      "Community features are temporarily unavailable.",
+    );
+  }
+  return { secret, production };
+}
+
 function allowedMethods(path: string): readonly string[] | null {
   if (
     path === "/api/v1/facets" ||
@@ -284,18 +306,14 @@ export function createApiHandler(dependencies: ApiDependencies) {
             "The submission was rejected.",
           );
         }
-        if (!dependencies.visitorSecret) {
-          throw new HttpError(
-            503,
-            "visitor_identity_unavailable",
-            "Community features are temporarily unavailable.",
-          );
-        }
-        const production = isProductionRequest(request, dependencies.production);
+        const { secret, production } = visitorSecretForWrite(
+          request,
+          dependencies,
+        );
         await community.consumeRateLimit(
           await createRateLimitAttempt({
             request,
-            secret: dependencies.visitorSecret,
+            secret,
             action: "suggestion",
             config: rateLimits,
             production,
@@ -311,7 +329,7 @@ export function createApiHandler(dependencies: ApiDependencies) {
         });
         const visitor = await getVisitorIdentity(
           request,
-          dependencies.visitorSecret,
+          secret,
         );
         const suggestion = await community.createSuggestion({
           name: parsed.data.name,
@@ -351,24 +369,21 @@ export function createApiHandler(dependencies: ApiDependencies) {
         if (!detail.cafe) {
           throw new HttpError(404, "cafe_not_found", "Cafe not found.");
         }
-        if (!dependencies.visitorSecret) {
-          throw new HttpError(
-            503,
-            "visitor_identity_unavailable",
-            "Community features are temporarily unavailable.",
-          );
-        }
+        const { secret, production } = visitorSecretForWrite(
+          request,
+          dependencies,
+        );
         const visitor = await getVisitorIdentity(
           request,
-          dependencies.visitorSecret,
+          secret,
         );
         await community.consumeRateLimit(
           await createRateLimitAttempt({
             request,
-            secret: dependencies.visitorSecret,
+            secret,
             action: "reaction",
             config: rateLimits,
-            production: isProductionRequest(request, dependencies.production),
+            production,
           }),
         );
         const result =
