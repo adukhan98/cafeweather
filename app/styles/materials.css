@@ -122,6 +122,7 @@
 
 .place-invitation__actions a {
   display: inline-flex;
+  min-height: var(--target-min);
   align-items: center;
   justify-content: center;
   padding-inline: var(--space-md);

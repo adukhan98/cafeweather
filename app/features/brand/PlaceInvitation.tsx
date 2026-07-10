@@ -21,7 +21,8 @@ export function PlaceInvitation({
       <div className="place-invitation__actions">
         <a href={`/cafes/${cafe.slug}`}>Meet me there</a>
         <a href={cafe.mapsUrl} target="_blank" rel="noreferrer">
-          Directions
+          Directions{" "}
+          <span className="visually-hidden">(opens in a new tab)</span>
         </a>
       </div>
     </article>

@@ -98,9 +98,14 @@ describe("Meet Me There brand primitives", () => {
       "href",
       `/cafes/${cafe.slug}`,
     );
-    expect(screen.getByRole("link", { name: "Directions" })).toHaveAttribute(
-      "rel",
-      "noreferrer",
+    const directions = screen.getByRole("link", {
+      name: "Directions (opens in a new tab)",
+    });
+    expect(directions).toHaveTextContent("Directions");
+    expect(directions).toHaveAttribute("rel", "noreferrer");
+    expect(directions).toHaveAttribute("target", "_blank");
+    expect(directions.querySelector(".visually-hidden")).toHaveTextContent(
+      "opens in a new tab",
     );
   });
 

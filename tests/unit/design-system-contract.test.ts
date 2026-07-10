@@ -64,6 +64,7 @@ describe("Meet Me There design-system contract", () => {
     });
     expect(declarationsFor(".place-invitation__actions a")).toMatchObject({
       display: "inline-flex",
+      "min-height": "var(--target-min)",
       "align-items": "center",
     });
     expect(declarationsFor(":focus-visible")).toMatchObject({
