@@ -101,7 +101,7 @@ describe("suggest route", () => {
     expect(new Headers(second.init?.headers).get("vary")).toBe("Cookie");
   });
 
-  it("renders the editorial suggestion page and every visible field", () => {
+  it("renders the invitation-note suggestion page and every visible field", () => {
     render(
       <SuggestPage
         siteKey={null}
@@ -110,11 +110,17 @@ describe("suggest route", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { level: 1, name: "Add a café to the weather map." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Know a place?" })).toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Suggest a Toronto café" })).toHaveClass(
+      "suggestion-form",
+      "form-note",
+    );
     expect(screen.getByLabelText("Café name")).toBeVisible();
-    expect(screen.getByLabelText("Street address")).toBeVisible();
+    expect(screen.getByLabelText("Exact branch or address")).toBeVisible();
     expect(screen.getByLabelText("HTTPS map link")).toBeVisible();
-    expect(screen.getByLabelText("Why should it be in the guide?")).toBeVisible();
-    expect(screen.getByLabelText("What should someone order or notice?")).toBeVisible();
+    expect(screen.getByLabelText("Why meet there?")).toBeVisible();
+    expect(screen.getByLabelText("What should we order or notice?")).toBeVisible();
+    expect(screen.getByText(/Tim Hortons and Starbucks are out/i)).toBeVisible();
+    expect(screen.getByText(/pending until/i)).toBeVisible();
   });
 });

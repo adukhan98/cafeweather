@@ -31,7 +31,7 @@ function api(overrides: Partial<CommunityApiClient> = {}): CommunityApiClient {
 async function fillCore(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Café name"), "Café Plenty");
   await user.type(
-    screen.getByLabelText("Why should it be in the guide?"),
+    screen.getByLabelText("Why meet there?"),
     "Its careful coffee and calm room deserve a closer look.",
   );
 }
@@ -73,8 +73,8 @@ describe("SuggestionForm", () => {
     );
     await fillCore(user);
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
-    expect(screen.getByLabelText("Street address")).toHaveAttribute("aria-invalid", "true");
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
+    expect(screen.getByLabelText("Exact branch or address")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText("HTTPS map link")).toHaveAttribute("aria-invalid", "true");
     expect(submitSuggestion).not.toHaveBeenCalled();
 
@@ -82,7 +82,7 @@ describe("SuggestionForm", () => {
       screen.getByLabelText("HTTPS map link"),
       "https://maps.google.com/?q=Cafe+Plenty",
     );
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
 
     expect(submitSuggestion).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -122,14 +122,14 @@ describe("SuggestionForm", () => {
       />,
     );
     await fillCore(user);
-    await user.type(screen.getByLabelText("Street address"), "19 Brock Ave, Toronto, ON");
+    await user.type(screen.getByLabelText("Exact branch or address"), "19 Brock Ave, Toronto, ON");
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
     expect(await screen.findByText("Please add a more specific reason.")).toBeInTheDocument();
     expect(screen.getByLabelText("Café name")).toHaveValue("Café Plenty");
     expect(submitSuggestion.mock.calls[0]?.[0].submissionId).toBe(suggestionId);
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
     expect(
       await screen.findByText("Thanks. Your suggestion is pending review."),
     ).toBeInTheDocument();
@@ -157,21 +157,21 @@ describe("SuggestionForm", () => {
     );
     await fillCore(user);
     await user.type(
-      screen.getByLabelText("Street address"),
+      screen.getByLabelText("Exact branch or address"),
       "19 Brock Ave, Toronto, ON",
     );
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
     expect(
       await screen.findByText(/could not be sent/i),
     ).toBeInTheDocument();
     expect(submitSuggestion.mock.calls[0]?.[0].submissionId).toBe(suggestionId);
 
     await user.type(
-      screen.getByLabelText("What should someone order or notice?"),
+      screen.getByLabelText("What should we order or notice?"),
       "Try the cortado.",
     );
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
 
     expect(submitSuggestion.mock.calls[1]?.[0].submissionId).toBe(
       nextSuggestionId,
@@ -191,20 +191,20 @@ describe("SuggestionForm", () => {
     );
     await fillCore(user);
     await user.type(
-      screen.getByLabelText("Street address"),
+      screen.getByLabelText("Exact branch or address"),
       "19 Brock Ave, Toronto, ON",
     );
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
 
     expect(screen.getByLabelText("Café name")).toBeDisabled();
-    expect(screen.getByLabelText("Street address")).toBeDisabled();
+    expect(screen.getByLabelText("Exact branch or address")).toBeDisabled();
     expect(screen.getByLabelText("HTTPS map link")).toBeDisabled();
     expect(
-      screen.getByLabelText("Why should it be in the guide?"),
+      screen.getByLabelText("Why meet there?"),
     ).toBeDisabled();
     expect(
-      screen.getByLabelText("What should someone order or notice?"),
+      screen.getByLabelText("What should we order or notice?"),
     ).toBeDisabled();
   });
 
@@ -242,14 +242,14 @@ describe("SuggestionForm", () => {
       />,
     );
     await fillCore(user);
-    await user.type(screen.getByLabelText("Street address"), "19 Brock Ave, Toronto, ON");
+    await user.type(screen.getByLabelText("Exact branch or address"), "19 Brock Ave, Toronto, ON");
     await waitFor(() => expect(renderTurnstile).toHaveBeenCalledOnce());
     act(() => turnstileOptions?.callback("valid-token"));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Send for review" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Send the note" })).toBeEnabled(),
     );
 
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
 
     expect(await screen.findByText(/try again in 75 seconds/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Café name")).toHaveValue("Café Plenty");
@@ -266,7 +266,7 @@ describe("SuggestionForm", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Send for review" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Send the note" })).toBeDisabled();
     expect(screen.getByText(/human verification is not configured/i)).toBeInTheDocument();
   });
 
@@ -286,8 +286,8 @@ describe("SuggestionForm", () => {
       />,
     );
     await fillCore(user);
-    await user.type(screen.getByLabelText("Street address"), "19 Brock Ave, Toronto, ON");
-    await user.click(screen.getByRole("button", { name: "Send for review" }));
+    await user.type(screen.getByLabelText("Exact branch or address"), "19 Brock Ave, Toronto, ON");
+    await user.click(screen.getByRole("button", { name: "Send the note" }));
 
     expect(signal?.aborted).toBe(false);
     view.unmount();

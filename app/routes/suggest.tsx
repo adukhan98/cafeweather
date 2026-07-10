@@ -2,6 +2,9 @@ import { data, useLoaderData, type LoaderFunctionArgs } from "react-router";
 
 import { getVisitorIdentity } from "../.server/visitor";
 import { SuggestionForm } from "../features/community/SuggestionForm";
+import { FormNote } from "../features/community/FormNote";
+import { InvitationNote } from "../features/brand/InvitationNote";
+import { Scene } from "../features/brand/Scene";
 import { cloudflareContext } from "../../workers/app";
 import { brand } from "../config/brand";
 
@@ -69,44 +72,33 @@ export function SuggestPage({
   turnstileRequired,
 }: SuggestLoaderData) {
   return (
-    <article className="suggest-page">
+    <Scene as="article" tone="burgundy" className="suggest-page" label="Suggest a café">
       <header className="suggest-page__header">
-        <div>
-          <h1>Add a café to the weather map.</h1>
-        </div>
+        <p className="suggest-page__eyebrow">Pass us a note</p>
+        <h1>Know a place?</h1>
         <p>
-          Know a Toronto branch we missed? Send the location and why it belongs.
-          We check every suggestion before it appears in the guide.
+          Tell us the exact Toronto branch and why you would ask someone to meet
+          you there.
         </p>
       </header>
 
       <div className="suggest-page__body">
-        <aside
-          className="suggest-page__notes"
-          aria-labelledby="suggest-notes-title"
-        >
-          <h2 id="suggest-notes-title">Before you send</h2>
-          <ul>
-            <li>
-              Name the exact branch whenever a café has more than one location.
-            </li>
-            <li>
-              Independent cafés are the focus. Tim Hortons and Starbucks are out.
-            </li>
-            <li>
-              A suggestion stays pending until the address and recommendation
-              are checked.
-            </li>
-          </ul>
-        </aside>
+        <InvitationNote as="aside" tilt="right" className="suggest-page__notes">
+          <h2>Before you send</h2>
+          <p>Name the exact branch whenever a café has more than one location.</p>
+          <p>Independent cafés are the focus. Tim Hortons and Starbucks are out.</p>
+          <p>A suggestion stays pending until we check the place and recommendation.</p>
+        </InvitationNote>
 
-        <SuggestionForm
-          siteKey={siteKey}
-          turnstileAction={action}
-          turnstileRequired={turnstileRequired}
-        />
+        <FormNote>
+          <SuggestionForm
+            siteKey={siteKey}
+            turnstileAction={action}
+            turnstileRequired={turnstileRequired}
+          />
+        </FormNote>
       </div>
-    </article>
+    </Scene>
   );
 }
 

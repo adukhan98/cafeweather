@@ -17,6 +17,7 @@ import "./styles/catalogue.css";
 import "./styles/map.css";
 import "./styles/detail.css";
 import "./styles/roulette.css";
+import "./styles/community.css";
 import "./fonts/latin-wght.css";
 import { AppShell } from "./components/AppShell";
 import { brand } from "./config/brand";

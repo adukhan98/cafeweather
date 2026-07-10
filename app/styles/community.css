@@ -1,0 +1,285 @@
+.suggest-page[data-tone="burgundy"] {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2xl);
+  color: var(--color-cream);
+}
+
+.suggest-page__header {
+  display: grid;
+  max-width: 64rem;
+  gap: var(--space-md);
+}
+
+.suggest-page__eyebrow,
+.suggest-page__header h1,
+.suggest-page__header p,
+.suggest-page__notes h2,
+.suggest-page__notes p {
+  margin: 0;
+}
+
+.suggest-page__eyebrow {
+  color: var(--color-honey);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.suggest-page__header h1 {
+  max-width: 9ch;
+  font-size: clamp(var(--text-3xl), 12vw, var(--text-display));
+  line-height: 0.82;
+}
+
+.suggest-page__header > p:last-child {
+  max-width: 39ch;
+  font-size: var(--text-md);
+}
+
+.suggest-page__body {
+  display: grid;
+  min-width: 0;
+  align-items: start;
+  gap: var(--space-2xl);
+}
+
+.suggest-page__notes {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.suggest-page__notes h2 {
+  color: var(--color-burgundy);
+  font-size: var(--text-xl);
+}
+
+.suggestion-form-shell,
+.suggestion-form {
+  min-width: 0;
+}
+
+.suggestion-form {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.suggestion-form__location {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+.suggestion-field {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2xs);
+}
+
+.suggestion-field__label-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.suggestion-field label {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.suggestion-field__label-row span {
+  color: var(--color-burgundy);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.suggestion-field input,
+.suggestion-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--target-min);
+  padding: var(--space-sm) var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule-strong);
+  border-radius: var(--radius-none);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  line-height: 1.5;
+  outline: var(--rule-strong) solid var(--color-paper);
+  outline-offset: var(--rule-hair);
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.suggestion-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.suggestion-field input:focus-visible,
+.suggestion-field textarea:focus-visible {
+  outline: var(--rule-strong) solid var(--color-focus);
+  outline-offset: var(--rule-hair);
+}
+
+.suggestion-field[data-state="error"] input,
+.suggestion-field[data-state="error"] textarea {
+  border-color: var(--color-error);
+}
+
+.suggestion-field input:disabled,
+.suggestion-field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  color: var(--color-muted);
+}
+
+.suggestion-field__help {
+  min-height: 2lh;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.suggestion-field__help[data-error="true"] {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.suggestion-field__help[data-error="true"]::before,
+.suggestion-form__form-message[data-state="error"]::before {
+  content: "! ";
+  font-weight: 800;
+}
+
+.suggestion-form__honeypot {
+  position: absolute;
+  width: var(--rule-hair);
+  height: var(--rule-hair);
+  overflow: clip;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.turnstile-widget {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xs);
+}
+
+.turnstile-widget__message,
+.suggestion-form__form-message {
+  min-height: 2lh;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.suggestion-form__verification-status {
+  width: fit-content;
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: var(--rule-strong) solid var(--color-burgundy);
+  color: var(--color-burgundy);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transform: rotate(-0.5deg);
+}
+
+.suggestion-form__submit-row {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-md);
+  border-block-start: var(--rule-hair) solid var(--color-rule);
+}
+
+.suggestion-form__submit-row .action-button {
+  display: inline-flex;
+  min-height: var(--target-min);
+  padding: var(--space-sm) var(--space-lg);
+  align-items: center;
+  justify-content: center;
+  border: var(--rule-strong) solid var(--color-burgundy);
+  background: var(--color-burgundy);
+  color: var(--color-cream);
+  cursor: pointer;
+  font-weight: 700;
+  transition: opacity var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+}
+
+.suggestion-form__submit-row .action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.suggestion-form__form-message[data-state="error"] {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.suggestion-form__success {
+  display: grid;
+  margin-block-end: var(--space-xl);
+  gap: var(--space-md);
+}
+
+.suggestion-form__success p {
+  margin: 0;
+}
+
+.suggestion-form__success-stamp {
+  width: fit-content;
+  padding: var(--space-xs) var(--space-sm);
+  border: var(--rule-strong) solid var(--color-success);
+  color: var(--color-success);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(-1deg);
+}
+
+@media (min-width: 48rem) {
+  .suggest-page__header {
+    grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 0.6fr);
+    align-items: end;
+  }
+
+  .suggest-page__eyebrow {
+    grid-column: 1 / -1;
+  }
+
+  .suggest-page__body {
+    grid-template-columns: minmax(15rem, 0.65fr) minmax(0, 1.35fr);
+  }
+
+  .suggest-page__notes {
+    margin-block-start: var(--space-3xl);
+  }
+
+  .suggestion-form__location {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .suggestion-form__submit-row .action-button:hover:not(:disabled) {
+    transform: translateY(calc(-1 * var(--rule-strong)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggest-page .invitation-note,
+  .suggestion-form__verification-status,
+  .suggestion-form__success-stamp,
+  .suggestion-form__submit-row .action-button {
+    transition-duration: var(--dur-micro);
+    transform: none;
+  }
+}

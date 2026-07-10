@@ -1,9 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(new URL("../../app/app.css", import.meta.url), "utf8");
 const detailCss = readFileSync(
   new URL("../../app/styles/detail.css", import.meta.url),
+  "utf8",
+);
+const communityCss = readFileSync(
+  new URL("../../app/styles/community.css", import.meta.url),
   "utf8",
 );
 const tokens = readFileSync(new URL("../../tokens.css", import.meta.url), "utf8");
@@ -30,7 +33,7 @@ describe("community UI style contract", () => {
   it("keeps circular reaction coasters touch-safe and lets long labels wrap", () => {
     const reaction = detailCss.match(/\.reaction-coaster\s*\{([^}]*)\}/s)?.[1] ?? "";
     const label = detailCss.match(/\.reaction-coaster__label\s*\{([^}]*)\}/s)?.[1] ?? "";
-    const submit = css.match(/\.suggestion-form__submit-row \.action-button\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const submit = communityCss.match(/\.suggestion-form__submit-row \.action-button\s*\{([^}]*)\}/s)?.[1] ?? "";
 
     expect(reaction).toContain("min-height: var(--target-min)");
     expect(reaction).toContain("min-width: var(--target-min)");
@@ -69,16 +72,16 @@ describe("community UI style contract", () => {
   });
 
   it("keeps field geometry stable across default, focus, and error states", () => {
-    const controls = css.match(
+    const controls = communityCss.match(
       /\.suggestion-field input,\s*\.suggestion-field textarea\s*\{([^}]*)\}/s,
     )?.[1] ?? "";
-    const focus = css.match(
+    const focus = communityCss.match(
       /\.suggestion-field input:focus-visible,\s*\.suggestion-field textarea:focus-visible\s*\{([^}]*)\}/s,
     )?.[1] ?? "";
-    const error = css.match(
+    const error = communityCss.match(
       /\.suggestion-field\[data-state="error"\] input,\s*\.suggestion-field\[data-state="error"\] textarea\s*\{([^}]*)\}/s,
     )?.[1] ?? "";
-    const disabled = css.match(
+    const disabled = communityCss.match(
       /\.suggestion-field input:disabled,\s*\.suggestion-field textarea:disabled\s*\{([^}]*)\}/s,
     )?.[1] ?? "";
 
@@ -94,8 +97,8 @@ describe("community UI style contract", () => {
   });
 
   it("reserves helper space and hides the honeypot without affecting flow", () => {
-    const helper = css.match(/\.suggestion-field__help\s*\{([^}]*)\}/s)?.[1] ?? "";
-    const honeypot = css.match(/\.suggestion-form__honeypot\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const helper = communityCss.match(/\.suggestion-field__help\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const honeypot = communityCss.match(/\.suggestion-form__honeypot\s*\{([^}]*)\}/s)?.[1] ?? "";
 
     expect(helper).toContain("min-height: 2lh");
     expect(honeypot).toContain("position: absolute");
@@ -103,12 +106,20 @@ describe("community UI style contract", () => {
   });
 
   it("starts as one column and only splits location fields at the existing tablet breakpoint", () => {
-    const base = css.match(/\.suggestion-form__location\s*\{([^}]*)\}/s)?.[1] ?? "";
-    const tablet = css.slice(css.indexOf("@media (min-width: 48rem)"));
+    const base = communityCss.match(/\.suggestion-form__location\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const tablet = communityCss.slice(communityCss.indexOf("@media (min-width: 48rem)"));
 
     expect(base).toContain("grid-template-columns: minmax(0, 1fr)");
     expect(tablet).toMatch(
       /\.suggestion-form__location\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s,
     );
+  });
+
+  it("uses token-only invitation materials with explicit form states", () => {
+    expect(communityCss).toContain(".suggest-page[data-tone=\"burgundy\"]");
+    expect(communityCss).toContain(".suggestion-form__verification-status");
+    expect(communityCss).toContain(".suggestion-form__success-stamp");
+    expect(communityCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(communityCss).not.toMatch(/#[0-9a-f]{3,8}|rgb\(|hsl\(|gradient\(|emoji/gi);
   });
 });

@@ -334,6 +334,7 @@ export function SuggestionForm({
       {success ? (
         <div className="suggestion-form__success" role="status">
           <p>Thanks. Your suggestion is pending review.</p>
+          <strong className="suggestion-form__success-stamp">Pending review.</strong>
           <button
             className="text-button"
             type="button"
@@ -344,7 +345,13 @@ export function SuggestionForm({
         </div>
       ) : null}
 
-      <form ref={form} className="suggestion-form" noValidate onSubmit={submit}>
+      <form
+        ref={form}
+        className="suggestion-form form-note"
+        aria-label="Suggest a Toronto café"
+        noValidate
+        onSubmit={submit}
+      >
         <Field
           name="name"
           label="Café name"
@@ -358,7 +365,7 @@ export function SuggestionForm({
         <div className="suggestion-form__location">
           <Field
             name="address"
-            label="Street address"
+            label="Exact branch or address"
             helper="Add this or a map link."
             error={displayedError("address")}
           >
@@ -382,7 +389,7 @@ export function SuggestionForm({
 
         <Field
           name="reason"
-          label="Why should it be in the guide?"
+          label="Why meet there?"
           helper="Tell us what makes this branch worth checking."
           error={displayedError("reason")}
           required
@@ -397,7 +404,7 @@ export function SuggestionForm({
 
         <Field
           name="recommendation"
-          label="What should someone order or notice?"
+          label="What should we order or notice?"
           helper="Optional — a drink, pastry, seat, or time of day."
           error={displayedError("recommendation")}
         >
@@ -425,6 +432,10 @@ export function SuggestionForm({
           onTokenChange={setToken}
         />
 
+        <p className="suggestion-form__verification-status">
+          Human check / {verificationPending || verificationUnavailable ? "waiting" : "ready"}
+        </p>
+
         <div className="suggestion-form__submit-row">
           <button
             className="action-button"
@@ -433,10 +444,11 @@ export function SuggestionForm({
               submitting || verificationUnavailable || verificationPending
             }
           >
-            {submitting ? "Sending for review…" : "Send for review"}
+            {submitting ? "Sending the note…" : "Send the note"}
           </button>
           <p
             className="suggestion-form__form-message"
+            data-state={formMessage || verificationUnavailable ? "error" : "quiet"}
             role="status"
             aria-live="polite"
           >
