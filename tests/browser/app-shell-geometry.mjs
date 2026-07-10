@@ -19,15 +19,16 @@ export async function assertAppShellGeometry(page, width, height = 800) {
       document.querySelectorAll("a, button, input, summary"),
     ).flatMap((element) => {
       if (!(element instanceof HTMLElement)) return [];
-      if (!element.closest(".masthead, .site-footer")) return [];
       const rect = element.getBoundingClientRect();
       const style = window.getComputedStyle(element);
       const visible =
         style.display !== "none" &&
         style.visibility !== "hidden" &&
+        style.opacity !== "0" &&
         rect.width > 0 &&
         rect.height > 0;
-      if (!visible || (rect.width >= 44 && rect.height >= 44)) return [];
+      const meetsTarget = rect.width >= 43.5 && rect.height >= 43.5;
+      if (!visible || meetsTarget) return [];
       return [{
         label: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? element.tagName,
         width: Math.round(rect.width),

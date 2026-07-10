@@ -1,16 +1,19 @@
 import { brand } from "../../config/brand";
-import { useLocation } from "react-router";
 
-export function BrandLockup({ descriptor = false }: { descriptor?: boolean }) {
-  const location = useLocation();
-
+export function BrandLockup({
+  descriptor = false,
+  current = false,
+}: {
+  descriptor?: boolean;
+  current?: boolean;
+}) {
   return (
     <div className="brand-lockup">
       <a
         className="brand-lockup__name brand-lockup__home"
         href="/"
         aria-label={`${brand.name} home`}
-        aria-current={location.pathname === "/" ? "page" : undefined}
+        aria-current={current ? "page" : undefined}
       >
         {brand.name}
       </a>

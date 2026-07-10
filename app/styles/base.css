@@ -21,6 +21,10 @@ textarea {
   min-height: var(--target-min);
 }
 
+input {
+  min-width: var(--target-min);
+}
+
 button,
 [role="button"],
 a {

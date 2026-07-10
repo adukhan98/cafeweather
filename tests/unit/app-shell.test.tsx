@@ -88,6 +88,13 @@ describe("AppShell", () => {
     );
   });
 
+  it("keeps route state in the masthead instead of the shared lockup", () => {
+    renderShell("/");
+    const homeLinks = screen.getAllByRole("link", { name: "Meet Me There home" });
+    expect(homeLinks[0]).toHaveAttribute("aria-current", "page");
+    expect(homeLinks[1]).not.toHaveAttribute("aria-current");
+  });
+
   it("discloses the mobile menu and restores focus when it closes", async () => {
     const user = userEvent.setup();
     renderShell();
@@ -98,6 +105,10 @@ describe("AppShell", () => {
     const mobileNavigation = screen.getByRole("navigation", { name: "Mobile" });
     expect(mobileNavigation).toBeVisible();
     expect(mobileNavigation).toHaveAttribute("data-state", "open");
+    expect(screen.getByRole("dialog", { name: "Mobile menu" })).toHaveAttribute(
+      "aria-modal",
+      "true",
+    );
 
     expect(within(mobileNavigation).getByRole("link", { name: "Browse" })).toHaveFocus();
     await user.keyboard("{Escape}");
@@ -110,12 +121,54 @@ describe("AppShell", () => {
     const user = userEvent.setup();
     renderShell();
     const toggle = screen.getByRole("button", { name: "Open menu" });
+    const main = screen.getByRole("main");
 
     await user.click(toggle);
-    fireEvent.pointerDown(screen.getByRole("main"));
+    fireEvent.pointerDown(main);
 
     await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
     expect(toggle).toHaveFocus();
+  });
+
+  it("locks document scroll and restores prior document state on cleanup", async () => {
+    const user = userEvent.setup();
+    document.body.style.overflow = "clip";
+    const { container, unmount } = renderShell();
+    const main = container.querySelector("main")!;
+    const footer = container.querySelector("footer")!;
+    footer.setAttribute("inert", "");
+
+    await user.click(screen.getByRole("button", { name: "Open menu" }));
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(main).toHaveAttribute("inert");
+    expect(footer).toHaveAttribute("inert");
+
+    unmount();
+    expect(document.body.style.overflow).toBe("clip");
+    expect(main).not.toHaveAttribute("inert");
+    expect(footer).toHaveAttribute("inert");
+    document.body.style.overflow = "";
+  });
+
+  it("confines forward and backward tabbing to the open menu", async () => {
+    const user = userEvent.setup();
+    renderShell();
+    const toggle = screen.getByRole("button", { name: "Open menu" });
+
+    await user.click(toggle);
+    const mobile = screen.getByRole("navigation", { name: "Mobile" });
+    const browse = within(mobile).getByRole("link", { name: "Browse" });
+    const suggest = within(mobile).getByRole("link", { name: "Suggest" });
+    expect(browse).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(toggle).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(suggest).toHaveFocus();
+    await user.tab();
+    expect(toggle).toHaveFocus();
+    await user.tab();
+    expect(browse).toHaveFocus();
   });
 
   it("closes mobile navigation and moves focus to main after link activation", async () => {

@@ -641,6 +641,10 @@ h6 {
 }
 
 .cafe-map__attribution a {
+  display: inline-flex;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  align-items: center;
   white-space: nowrap;
 }
 
@@ -761,6 +765,9 @@ h6 {
 }
 
 .cafe-row__name a {
+  display: flex;
+  min-height: var(--target-min);
+  align-items: center;
   text-decoration-color: var(--color-accent);
   text-decoration-thickness: 0;
 }
