@@ -7,7 +7,16 @@ function discoveryParams(state: DiscoveryState): URLSearchParams {
 
 export function initialRouletteSeed(state: DiscoveryState): string {
   const serialized = discoveryParams(state).toString();
-  return `cafe-weather:${serialized || "all"}`;
+  return `meet-me-there:${serialized || "all"}`;
+}
+
+export function displayMatchNumber(seed: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return String((hash >>> 0) % 99 + 1).padStart(2, "0");
 }
 
 export function buildRouletteParams(

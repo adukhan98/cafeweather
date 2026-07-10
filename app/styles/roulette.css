@@ -1,0 +1,193 @@
+.roulette-page {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  padding: clamp(var(--space-xl), 7vw, var(--space-3xl)) var(--page-gutter) var(--space-4xl);
+  gap: var(--space-xl);
+  overflow: clip;
+  background: var(--color-honey);
+  color: var(--color-espresso);
+}
+
+.roulette-page__header {
+  display: grid;
+  max-width: 72rem;
+  gap: var(--space-md);
+}
+
+.roulette-page__header h1 {
+  max-width: 15ch;
+  margin: var(--space-xs) 0 0;
+  font-size: clamp(var(--text-2xl), 8vw, var(--text-4xl));
+  overflow-wrap: anywhere;
+}
+
+.roulette-page__header > p { max-width: 44ch; }
+
+.roulette-filters {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.roulette-filters ul {
+  display: flex;
+  margin: var(--space-sm) 0 0;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  list-style: none;
+}
+
+.roulette-stamp {
+  display: inline-flex;
+  min-height: var(--target-min);
+  align-items: center;
+  padding-inline: var(--space-sm);
+  border: var(--rule-strong) solid currentColor;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transform: rotate(-1deg);
+}
+
+.roulette-deck {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 58rem);
+  margin: var(--space-xl) auto;
+  padding: 0 var(--space-md) var(--space-md) 0;
+}
+
+.roulette-deck::before,
+.roulette-deck::after {
+  position: absolute;
+  inset: 0 var(--space-md) var(--space-md) 0;
+  z-index: -1;
+  border: var(--rule-strong) solid var(--color-espresso);
+  content: "";
+  transform-origin: center;
+}
+
+.roulette-deck::before {
+  background: var(--color-clay);
+  transform: rotate(-2.2deg) translate(calc(var(--space-sm) * -1), var(--space-xs));
+}
+
+.roulette-deck::after {
+  background: var(--color-terracotta);
+  transform: rotate(1.7deg) translate(var(--space-md), var(--space-sm));
+}
+
+.roulette-result {
+  display: grid;
+  padding: clamp(var(--space-xl), 7vw, var(--space-3xl));
+  gap: var(--space-lg);
+  border: var(--rule-strong) solid var(--color-espresso);
+  background: var(--color-cream);
+  color: var(--color-espresso);
+  box-shadow: var(--space-md) var(--space-md) 0 var(--color-burgundy);
+  opacity: 1;
+  transform: rotate(-0.5deg) translateY(0);
+  animation: roulette-deal var(--dur-long) var(--ease-out) both;
+}
+
+.roulette-result__heading { display: grid; gap: var(--space-xs); }
+
+.roulette-result h2 {
+  max-width: 14ch;
+  margin: 0;
+  font-size: clamp(var(--text-2xl), 9vw, var(--text-4xl));
+  line-height: 0.9;
+  overflow-wrap: anywhere;
+}
+
+.roulette-result__location {
+  width: fit-content;
+  margin: 0;
+  padding-block: var(--space-xs);
+  border-block: var(--rule-hair) solid currentColor;
+  font-weight: 700;
+}
+
+.roulette-result__recommendation {
+  max-width: 34ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-lg), 4vw, var(--text-xl));
+  line-height: 1.15;
+}
+
+.roulette-deck__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.roulette-deck__actions a,
+.roulette-deck__actions button {
+  display: inline-flex;
+  min-height: var(--target-min);
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-md);
+  border: var(--rule-strong) solid var(--color-espresso);
+  background: var(--color-espresso);
+  color: var(--color-cream);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.roulette-deck__actions a:nth-child(2) {
+  background: var(--color-cream);
+  color: var(--color-espresso);
+}
+
+.roulette-deck__actions button {
+  width: calc(var(--target-min) * 2);
+  min-height: calc(var(--target-min) * 2);
+  padding: var(--space-xs);
+  border-radius: 50%;
+  background: var(--color-burgundy);
+}
+
+.roulette-deck__actions button:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+
+.roulette-empty {
+  max-width: 46rem;
+  padding: var(--space-xl);
+  border: var(--rule-strong) solid currentColor;
+  background: var(--color-cream);
+}
+
+@keyframes roulette-deal {
+  from { opacity: 0; transform: rotate(2deg) translateY(var(--space-xl)); }
+  to { opacity: 1; transform: rotate(-0.5deg) translateY(0); }
+}
+
+@media (max-width: 40rem) {
+  .roulette-filters { align-items: start; flex-direction: column; }
+  .roulette-deck { padding-inline: 0; }
+  .roulette-result { padding: var(--space-xl) var(--space-lg); }
+  .roulette-deck__actions { display: grid; }
+  .roulette-deck__actions a { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="reveal"],
+  .roulette-result,
+  .roulette-stamp {
+    animation: none;
+    transition: opacity var(--dur-micro) linear;
+    transition-duration: .01ms;
+    transform: none;
+  }
+
+  .roulette-result { opacity: 1; }
+}

@@ -13,6 +13,7 @@ import {
 } from "../../app/features/roulette/RoulettePage";
 import { prepareRouletteData } from "../../app/.server/page-data";
 import { parseDiscoveryParams } from "../../app/features/discovery/discovery-params";
+import { displayMatchNumber } from "../../app/features/roulette/roulette-params";
 
 function renderPage(url: string, cafe = cafes[0]) {
   const search = new URL(url, "https://cafeweather.test").searchParams;
@@ -75,7 +76,7 @@ describe("roulette page data", () => {
     const first = await prepareRouletteData(service, url);
     const second = await prepareRouletteData(service, url);
 
-    expect(first.seed).toBe("cafe-weather:mood=cozy");
+    expect(first.seed).toBe("meet-me-there:mood=cozy");
     expect(second.seed).toBe(first.seed);
     expect(second.cafe?.id).toBe(first.cafe?.id);
   });
@@ -98,6 +99,29 @@ describe("roulette page data", () => {
 });
 
 describe("RoulettePage", () => {
+  it("stages a cozy result as an actionable card deck", () => {
+    const match = cafes.find((cafe) => cafe.slug === "nabulu-coffee-st-joseph")!;
+    const { container } = renderPage("/roulette?mood=cozy&seed=warm-night", match);
+
+    expect(container.querySelector(".roulette-stamp")).toHaveTextContent("COZY");
+    expect(screen.getByRole("article", { name: "Roulette result" })).toHaveAttribute(
+      "data-motion",
+      "deck",
+    );
+    expect(screen.getByRole("button", { name: "Reroll" })).toBeEnabled();
+    expect(screen.getByRole("link", { name: /directions/i })).toHaveAttribute(
+      "href",
+      match.mapsUrl,
+    );
+  });
+
+  it("turns a seed into the same two-digit match number", () => {
+    expect(displayMatchNumber("warm-night")).toMatch(/^\d{2}$/);
+    expect(displayMatchNumber("warm-night")).toBe(displayMatchNumber("warm-night"));
+    expect(Number(displayMatchNumber("warm-night"))).toBeGreaterThanOrEqual(1);
+    expect(Number(displayMatchNumber("warm-night"))).toBeLessThanOrEqual(99);
+  });
+
   it("renders one deliberate result with reason, branch, detail, and directions", () => {
     const match = cafes.find((cafe) => cafe.slug === "misc-coffee-ossington")!;
     renderPage("/roulette?mood=coffee-nerd", match);
@@ -105,7 +129,7 @@ describe("RoulettePage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Your café is Misc Coffee." })).toBeInTheDocument();
     expect(screen.getByText("Ossington")).toBeInTheDocument();
     expect(screen.getByText(match.recommendation)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See café details" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Meet me there" })).toHaveAttribute(
       "href",
       `/cafes/${match.slug}`,
     );
@@ -119,7 +143,7 @@ describe("RoulettePage", () => {
     const match = cafes.find((cafe) => cafe.slug === "misc-coffee-ossington")!;
     renderPage("/roulette?mood=coffee-nerd", match);
 
-    expect(screen.getByText("Today’s pick").parentElement).toBe(
+    expect(screen.getByText(/Tonight · match \d{2}/).parentElement).toBe(
       screen.getByRole("heading", { level: 2, name: match.name }).parentElement,
     );
   });
@@ -128,7 +152,7 @@ describe("RoulettePage", () => {
     renderPage("/roulette?mood=coffee-nerd");
 
     const stack = screen.getByText(
-      "Café roulette · one considered pick",
+      "Café roulette · one warm introduction",
     ).parentElement;
     expect(stack).toBe(screen.getByRole("heading", { level: 1 }).parentElement);
     expect(stack).toHaveClass("roulette-page__headline");
@@ -138,10 +162,10 @@ describe("RoulettePage", () => {
     renderPage("/roulette?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over");
 
     expect(screen.getByRole("region", { name: "Roulette filters" })).toHaveTextContent(
-      "Search: Misc",
+      "SEARCH: MISC",
     );
     expect(screen.getByRole("region", { name: "Roulette filters" })).toHaveTextContent(
-      "Coffee nerd",
+      "COFFEE NERD",
     );
     expect(screen.getByRole("link", { name: "Change active filters" })).toHaveAttribute(
       "href",
@@ -173,7 +197,7 @@ describe("RoulettePage", () => {
     fireEvent.click(reroll);
 
     expect(reroll).toHaveFocus();
-    expect(reroll).toHaveAttribute("aria-disabled", "true");
+    expect(reroll).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("Choosing another café.");
     expect(uuid).toHaveBeenCalledTimes(1);
     uuid.mockRestore();
@@ -189,7 +213,7 @@ describe("RoulettePage", () => {
       </MemoryRouter>,
     );
     const control = screen.getByRole("button", { name: "Reroll" });
-    const firstReveal = container.querySelector(".roulette-reveal__result");
+    const firstReveal = container.querySelector(".roulette-result");
 
     rerender(
       <MemoryRouter>
@@ -197,7 +221,7 @@ describe("RoulettePage", () => {
       </MemoryRouter>,
     );
 
-    expect(container.querySelector(".roulette-reveal__result")).not.toBe(firstReveal);
+    expect(container.querySelector(".roulette-result")).not.toBe(firstReveal);
     expect(screen.getByRole("button", { name: "Reroll" })).toBe(control);
   });
 
