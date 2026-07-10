@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
@@ -67,6 +68,37 @@ function failingD1(error: Error): D1Database {
   } as unknown as D1Database;
 }
 
+function sqliteD1(database: DatabaseSync): D1Database {
+  return {
+    prepare(sql: string) {
+      let bindings: unknown[] = [];
+      const statement = {
+        bind(...values: unknown[]) {
+          bindings = values;
+          return statement;
+        },
+        async run() {
+          const result = database.prepare(sql).run(...bindings);
+          return {
+            success: true,
+            meta: { changes: Number(result.changes) },
+          };
+        },
+        async all() {
+          return {
+            success: true,
+            results: database.prepare(sql).all(...bindings),
+          };
+        },
+        async first() {
+          return database.prepare(sql).get(...bindings) ?? null;
+        },
+      };
+      return statement;
+    },
+  } as unknown as D1Database;
+}
+
 describe("D1 repositories", () => {
   it("uses conflict-safe prepared statements for reaction writes", async () => {
     const { db, statements } = fakeD1();
@@ -84,6 +116,46 @@ describe("D1 repositories", () => {
     ]);
     expect(statements[1].sql).toContain("DELETE FROM reactions");
     expect(statements[1].bindings).toEqual(["cafe-1", "visitor-hash", "cozy"]);
+  });
+
+  it("uses one prepared aggregate query for reaction counts and visitor state", async () => {
+    const { db, statements } = fakeD1();
+    const repository = new D1CommunityRepository(db);
+
+    await repository.listReactions("cafe-1", "visitor-hash");
+
+    expect(statements).toHaveLength(1);
+    expect(statements[0].sql).toContain("COUNT(*)");
+    expect(statements[0].sql).toContain("MAX(CASE WHEN visitor_hash = ?");
+    expect(statements[0].sql).toContain("GROUP BY kind");
+    expect(statements[0].bindings).toEqual(["visitor-hash", "cafe-1"]);
+  });
+
+  it("inserts a caller-derived suggestion id idempotently with prepared values", async () => {
+    const { db, statements } = fakeD1();
+    const repository = new D1CommunityRepository(db);
+    const id = "d".repeat(64);
+
+    const result = await repository.createSuggestion({
+      id,
+      name: "Map-only Cafe",
+      mapUrl: "https://maps.example/cafe",
+      reason: "A useful recommendation with a precise map.",
+      visitorHash: "a".repeat(64),
+    });
+
+    expect(result).toEqual({ id, status: "pending" });
+    expect(statements).toHaveLength(1);
+    expect(statements[0].sql).toContain("ON CONFLICT(id) DO NOTHING");
+    expect(statements[0].bindings).toEqual([
+      id,
+      "Map-only Cafe",
+      null,
+      "https://maps.example/cafe",
+      "A useful recommendation with a precise map.",
+      null,
+      "a".repeat(64),
+    ]);
   });
 
   it("uses prepared statements for catalogue reads", async () => {
@@ -110,6 +182,7 @@ describe("D1 repositories", () => {
     ).rejects.toBeInstanceOf(CatalogueRepositoryUnavailableError);
     await expect(
       new D1CommunityRepository(failingD1(timeout)).createSuggestion({
+        id: "f".repeat(64),
         name: "Cafe",
         address: "100 Queen Street West",
         reason: "A useful recommendation",
@@ -213,6 +286,168 @@ describe("initial D1 migration", () => {
     expect(sql).toContain("CHECK (length(key_hash) = 64)");
     expect(sql).toContain("expires_at");
     expect(sql).toContain("CREATE INDEX idx_rate_limits_expiry");
+  });
+
+  it("rebuilds suggestions for address-or-map input without losing moderated rows", async () => {
+    const migrationUrl = new URL(
+      "../../migrations/0003_suggestion_address_or_map.sql",
+      import.meta.url,
+    );
+    expect(existsSync(migrationUrl)).toBe(true);
+    const [initial, migration] = await Promise.all([
+      readFile(new URL("../../migrations/0001_initial.sql", import.meta.url), "utf8"),
+      readFile(migrationUrl, "utf8"),
+    ]);
+    const db = new DatabaseSync(":memory:");
+
+    try {
+      db.exec(initial);
+      db.prepare(
+        `INSERT INTO suggestions
+          (id, name, address, map_url, reason, recommendation, status,
+           visitor_hash, created_at, reviewed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        "old-suggestion",
+        "Existing Cafe",
+        "100 Queen Street West, Toronto",
+        "https://maps.example/existing",
+        "A previously moderated recommendation.",
+        "Order the filter coffee.",
+        "approved",
+        "b".repeat(64),
+        "2026-07-01 10:00:00",
+        "2026-07-02 11:00:00",
+      );
+      const legacyLongMapUrl = `https://maps.example/${"x".repeat(2_100)}`;
+      db.prepare(
+        `INSERT INTO suggestions
+          (id, name, address, map_url, reason, status, visitor_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        "legacy-long-map",
+        "Legacy Cafe",
+        "200 King Street West, Toronto",
+        legacyLongMapUrl,
+        "A legacy recommendation must survive the schema rebuild.",
+        "pending",
+        "e".repeat(64),
+      );
+
+      db.exec(migration);
+
+      expect(
+        db.prepare("SELECT * FROM suggestions WHERE id = ?").get("old-suggestion"),
+      ).toEqual({
+        id: "old-suggestion",
+        name: "Existing Cafe",
+        address: "100 Queen Street West, Toronto",
+        map_url: "https://maps.example/existing",
+        reason: "A previously moderated recommendation.",
+        recommendation: "Order the filter coffee.",
+        status: "approved",
+        visitor_hash: "b".repeat(64),
+        created_at: "2026-07-01 10:00:00",
+        reviewed_at: "2026-07-02 11:00:00",
+      });
+      expect(
+        db.prepare("SELECT map_url FROM suggestions WHERE id = ?").get("legacy-long-map"),
+      ).toEqual({ map_url: legacyLongMapUrl });
+      db.prepare(
+        `INSERT INTO suggestions
+          (id, name, address, map_url, reason, visitor_hash)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
+        "map-only",
+        "Map-only Cafe",
+        null,
+        "https://maps.example/map-only",
+        "A valid map-only recommendation.",
+        "c".repeat(64),
+      );
+      expect(
+        db.prepare("SELECT address, map_url FROM suggestions WHERE id = ?").get("map-only"),
+      ).toEqual({ address: null, map_url: "https://maps.example/map-only" });
+      expect(() =>
+        db.prepare(
+          `INSERT INTO suggestions
+            (id, name, address, map_url, reason, visitor_hash)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(
+          "locationless",
+          "Locationless Cafe",
+          null,
+          null,
+          "This row must violate location requirements.",
+          "d".repeat(64),
+        ),
+      ).toThrow();
+      expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("keeps an API submission replay to one D1 row without storing its raw UUID", async () => {
+    const [initial, rateLimits, addressOrMap] = await Promise.all([
+      readFile(new URL("../../migrations/0001_initial.sql", import.meta.url), "utf8"),
+      readFile(new URL("../../migrations/0002_rate_limits.sql", import.meta.url), "utf8"),
+      readFile(
+        new URL("../../migrations/0003_suggestion_address_or_map.sql", import.meta.url),
+        "utf8",
+      ),
+    ]);
+    const db = new DatabaseSync(":memory:");
+    const rawSubmissionId = "018f47a2-7749-7ad5-9658-4be5d31e1b2c";
+    const origin = "https://cafe-weather.test";
+
+    try {
+      db.exec(initial);
+      db.exec(rateLimits);
+      db.exec(addressOrMap);
+      const handler = createApiHandler({
+        communityRepository: new D1CommunityRepository(sqliteD1(db)),
+        visitorSecret: "test-secret-at-least-32-characters-long",
+      });
+      const body = JSON.stringify({
+        name: "Replay Cafe",
+        address: "100 Queen Street West, Toronto",
+        reason: "A recommendation retried with one submission UUID.",
+        submissionId: rawSubmissionId,
+      });
+      const first = await handler(
+        new Request(`${origin}/api/v1/suggestions`, {
+          method: "POST",
+          headers: { origin, "content-type": "application/json" },
+          body,
+        }),
+      );
+      const replay = await handler(
+        new Request(`${origin}/api/v1/suggestions`, {
+          method: "POST",
+          headers: {
+            origin,
+            "content-type": "application/json",
+            cookie: first.headers.get("set-cookie") ?? "",
+          },
+          body,
+        }),
+      );
+      const firstBody = await first.json();
+      const replayBody = await replay.json();
+
+      expect(first.status).toBe(202);
+      expect(replay.status).toBe(202);
+      expect(replayBody).toEqual(firstBody);
+      expect(firstBody.suggestion.id).toMatch(/^[a-f0-9]{64}$/u);
+      expect(
+        db.prepare("SELECT count(*) AS count FROM suggestions").get(),
+      ).toEqual({ count: 1 });
+      expect(JSON.stringify(db.prepare("SELECT * FROM suggestions").all()))
+        .not.toContain(rawSubmissionId);
+    } finally {
+      db.close();
+    }
   });
 
   it("seeds all verified cafes idempotently and enables reaction FK writes", async () => {

@@ -1,8 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cafe-weather",
-  "compatibility_date": "2026-07-09",
+  "compatibility_date": "2026-07-10",
+  "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
+  "vars": {
+    "TURNSTILE_SITE_KEY": "",
+    "TURNSTILE_HOSTNAME": "",
+    "TURNSTILE_ACTION": "suggestion"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
   "d1_databases": [
     {
       "binding": "DB",

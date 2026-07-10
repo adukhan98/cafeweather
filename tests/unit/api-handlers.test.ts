@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cafes } from "../../app/data/cafes";
+import { reactionKinds } from "../../app/contracts/community";
 import {
   createApiHandler,
   createApiHandlerFromEnv,
@@ -7,6 +8,7 @@ import {
 } from "../../app/.server/api-handlers";
 
 const origin = "https://cafe-weather.test";
+const submissionId = "018f47a2-7749-7ad5-9658-4be5d31e1b2c";
 
 class MemoryCommunityRepository {
   readonly reactions = new Set<string>();
@@ -32,9 +34,27 @@ class MemoryCommunityRepository {
     return this.reactions.delete(`${cafeId}:${visitorHash}:${kind}`);
   }
 
+  async listReactions(cafeId: string, visitorHash: string) {
+    return reactionKinds.flatMap((kind) => {
+      const suffix = `:${kind}`;
+      const matching = [...this.reactions].filter(
+        (reaction) => reaction.startsWith(`${cafeId}:`) && reaction.endsWith(suffix),
+      );
+      return matching.length > 0
+        ? [{
+            kind,
+            count: matching.length,
+            active: matching.includes(`${cafeId}:${visitorHash}:${kind}`),
+          }]
+        : [];
+    });
+  }
+
   async createSuggestion(suggestion: Record<string, unknown>) {
-    this.suggestions.push(suggestion);
-    return { id: `suggestion-${this.suggestions.length}`, status: "pending" as const };
+    if (!this.suggestions.some(({ id }) => id === suggestion.id)) {
+      this.suggestions.push(suggestion);
+    }
+    return { id: String(suggestion.id), status: "pending" as const };
   }
 
   async consumeRateLimit(attempt: {
@@ -182,7 +202,12 @@ describe("Cafe Weather API handlers", () => {
     const { request } = createHarness();
     const response = await request("/api/v1/suggestions", {
       method: "POST",
-      body: JSON.stringify({ name: "", address: "x", reason: "short" }),
+      body: JSON.stringify({
+        name: "",
+        address: "x",
+        reason: "short",
+        submissionId,
+      }),
     });
     const body = await response.json();
 
@@ -204,6 +229,7 @@ describe("Cafe Weather API handlers", () => {
         address: "100 Queen Street West, Toronto",
         reason: "A thoughtful local recommendation.",
         website: "https://spam.example",
+        submissionId,
       }),
     });
 
@@ -232,11 +258,92 @@ describe("Cafe Weather API handlers", () => {
     const removed = await request(path, { method: "DELETE", headers: { cookie } });
     const removedAgain = await request(path, { method: "DELETE", headers: { cookie } });
 
-    expect(await first.json()).toMatchObject({ reaction: { active: true, changed: true } });
-    expect(await second.json()).toMatchObject({ reaction: { active: true, changed: false } });
-    expect(await removed.json()).toMatchObject({ reaction: { active: false, changed: true } });
-    expect(await removedAgain.json()).toMatchObject({ reaction: { active: false, changed: false } });
+    expect(await first.json()).toEqual({
+      reaction: { kind: "cozy", active: true, changed: true, count: 1 },
+    });
+    expect(await second.json()).toEqual({
+      reaction: { kind: "cozy", active: true, changed: false, count: 1 },
+    });
+    expect(await removed.json()).toEqual({
+      reaction: { kind: "cozy", active: false, changed: true, count: 0 },
+    });
+    expect(await removedAgain.json()).toEqual({
+      reaction: { kind: "cozy", active: false, changed: false, count: 0 },
+    });
     expect(communityRepository.reactions).toHaveLength(0);
+  });
+
+  it("returns all reaction kinds in contract order with private cookie-aware caching", async () => {
+    const { request, communityRepository } = createHarness({
+      turnstileSecret: "unused-turnstile-secret",
+      verifyTurnstile: async () => {
+        throw new Error("GET reactions must not invoke Turnstile");
+      },
+    });
+
+    const response = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions",
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      reactions: reactionKinds.map((kind) => ({ kind, count: 0, active: false })),
+    });
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("vary")).toBe("Cookie");
+    expect(response.headers.get("set-cookie")).toContain("cw_visitor=");
+    expect(communityRepository.rateLimitAttempts).toHaveLength(0);
+    expect(JSON.stringify(body)).not.toMatch(/visitor|hash|cw_visitor/iu);
+  });
+
+  it("restores active reaction state from the signed visitor cookie after reload", async () => {
+    const { request } = createHarness();
+    const mutation = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions/quiet",
+      { method: "PUT" },
+    );
+    const cookie = mutation.headers.get("set-cookie") ?? "";
+
+    const reloaded = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions",
+      { headers: { cookie } },
+    );
+    const body = await reloaded.json();
+
+    expect(reloaded.headers.get("set-cookie")).toBeNull();
+    expect(body.reactions.find(({ kind }: { kind: string }) => kind === "quiet"))
+      .toEqual({ kind: "quiet", count: 1, active: true });
+  });
+
+  it("rotates a tampered visitor cookie without exposing identity material", async () => {
+    const { request } = createHarness();
+    const first = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions",
+    );
+    const original = first.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    const tampered = `${original.slice(0, -1)}${original.endsWith("a") ? "b" : "a"}`;
+
+    const rotated = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions",
+      { headers: { cookie: tampered } },
+    );
+    const body = await rotated.json();
+
+    expect(rotated.status).toBe(200);
+    expect(rotated.headers.get("set-cookie")).toContain("cw_visitor=");
+    expect(rotated.headers.get("set-cookie")).not.toContain(tampered);
+    expect(JSON.stringify(body)).not.toMatch(/visitor|hash|cw_visitor/iu);
+  });
+
+  it("verifies the published cafe before reading its reactions", async () => {
+    const { request } = createHarness();
+
+    const response = await request("/api/v1/cafes/not-a-cafe/reactions");
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error.code).toBe("cafe_not_found");
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("creates a pending suggestion with a 202 response", async () => {
@@ -247,13 +354,180 @@ describe("Cafe Weather API handlers", () => {
         name: "A new cafe",
         address: "100 Queen Street West, Toronto",
         reason: "A thoughtful local recommendation.",
+        submissionId,
       }),
     });
 
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({
-      suggestion: { id: "suggestion-1", status: "pending" },
+    const body = await response.json();
+    expect(body).toEqual({
+      suggestion: { id: expect.stringMatching(/^[a-f0-9]{64}$/u), status: "pending" },
     });
+    expect(body.suggestion.id).not.toBe(submissionId);
+    expect(communityRepository.suggestions).toHaveLength(1);
+    expect(JSON.stringify(communityRepository.suggestions)).not.toContain(
+      submissionId,
+    );
+  });
+
+  it("accepts a map-only suggestion and normalizes blank address text", async () => {
+    const { request, communityRepository } = createHarness();
+
+    const response = await request("/api/v1/suggestions", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "A mapped cafe",
+        address: "   ",
+        mapUrl: "  https://maps.example/cafe  ",
+        reason: "A useful map-only recommendation.",
+        submissionId,
+      }),
+    });
+
+    expect(response.status).toBe(202);
+    expect(communityRepository.suggestions[0]).toMatchObject({
+      address: undefined,
+      mapUrl: "https://maps.example/cafe",
+    });
+  });
+
+  it("maps the address-or-map cross-field error to both fields", async () => {
+    const { request, communityRepository } = createHarness();
+
+    const response = await request("/api/v1/suggestions", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "A locationless cafe",
+        reason: "A recommendation without usable location data.",
+        submissionId,
+      }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("validation_failed");
+    expect(body.error.fieldErrors.address).toEqual([
+      "Enter an address or an HTTPS map URL.",
+    ]);
+    expect(body.error.fieldErrors.mapUrl).toEqual([
+      "Enter an address or an HTTPS map URL.",
+    ]);
+    expect(communityRepository.suggestions).toHaveLength(0);
+  });
+
+  it("rejects an insecure suggestion map URL", async () => {
+    const { request } = createHarness();
+
+    const response = await request("/api/v1/suggestions", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "An insecure map cafe",
+        mapUrl: "http://maps.example/cafe",
+        reason: "A recommendation with an insecure map URL.",
+        submissionId,
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.fieldErrors.mapUrl).toEqual(
+      expect.any(Array),
+    );
+  });
+
+  it("rejects a suggestion map URL longer than 2048 characters", async () => {
+    const { request } = createHarness();
+
+    const response = await request("/api/v1/suggestions", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "An oversized map cafe",
+        mapUrl: `https://maps.example/${"x".repeat(2_100)}`,
+        reason: "A recommendation with an oversized map URL.",
+        submissionId,
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.fieldErrors.mapUrl).toEqual(
+      expect.any(Array),
+    );
+  });
+
+  it("requires a normal UUID submission id", async () => {
+    const { request, communityRepository } = createHarness();
+
+    const response = await request("/api/v1/suggestions", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "A cafe with a bad replay key",
+        address: "100 Queen Street West, Toronto",
+        reason: "A recommendation with an invalid submission key.",
+        submissionId: "not-a-uuid",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.fieldErrors.submissionId).toEqual(
+      expect.any(Array),
+    );
+    expect(communityRepository.suggestions).toHaveLength(0);
+  });
+
+  it("replays the same visitor submission id without creating another row", async () => {
+    const { request, communityRepository } = createHarness();
+    const input = {
+      method: "POST",
+      body: JSON.stringify({
+        name: "A replay-safe cafe",
+        address: "100 Queen Street West, Toronto",
+        reason: "A recommendation safe to retry after a timeout.",
+        submissionId,
+      }),
+    } as const;
+
+    const first = await request("/api/v1/suggestions", input);
+    const cookie = first.headers.get("set-cookie") ?? "";
+    const replay = await request("/api/v1/suggestions", {
+      ...input,
+      headers: { cookie },
+    });
+
+    expect(first.status).toBe(202);
+    expect(replay.status).toBe(202);
+    expect(await replay.json()).toEqual(await first.json());
+    expect(communityRepository.suggestions).toHaveLength(1);
+  });
+
+  it("runs rate limiting and Turnstile again before accepting a replay", async () => {
+    let turnstileCalls = 0;
+    const { request, communityRepository } = createHarness({
+      turnstileSecret: "turnstile-secret",
+      verifyTurnstile: async () => {
+        turnstileCalls += 1;
+        return true;
+      },
+    });
+    const input = {
+      method: "POST",
+      body: JSON.stringify({
+        name: "A verified replay cafe",
+        address: "100 Queen Street West, Toronto",
+        reason: "A recommendation whose retries stay abuse-protected.",
+        submissionId,
+        turnstileToken: "valid-token",
+      }),
+    } as const;
+
+    const first = await request("/api/v1/suggestions", input);
+    const replay = await request("/api/v1/suggestions", {
+      ...input,
+      headers: { cookie: first.headers.get("set-cookie") ?? "" },
+    });
+
+    expect(first.status).toBe(202);
+    expect(replay.status).toBe(202);
+    expect(turnstileCalls).toBe(2);
+    expect(communityRepository.rateLimitAttempts).toHaveLength(2);
     expect(communityRepository.suggestions).toHaveLength(1);
   });
 
@@ -395,6 +669,7 @@ describe("Cafe Weather API handlers", () => {
         name: "A new cafe",
         address: "100 Queen Street West, Toronto",
         reason: "A thoughtful local recommendation.",
+        submissionId,
       }),
     } as const;
 
@@ -453,6 +728,33 @@ describe("Cafe Weather API handlers", () => {
     expect(communityRepository.reactions).toHaveLength(0);
   });
 
+  it("fails closed when a production visitor secret is missing", async () => {
+    const communityRepository = new MemoryCommunityRepository();
+    const handler = createApiHandler({
+      communityRepository,
+      production: true,
+    });
+
+    const response = await handler(
+      new Request(
+        `${origin}/api/v1/cafes/larrys-place-parkdale/reactions/cozy`,
+        {
+          method: "PUT",
+          headers: {
+            origin,
+            "cf-connecting-ip": "203.0.113.47",
+          },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe(
+      "visitor_identity_unavailable",
+    );
+    expect(communityRepository.reactions).toHaveLength(0);
+  });
+
   it("accepts a production visitor secret with at least 32 UTF-8 bytes", async () => {
     const communityRepository = new MemoryCommunityRepository();
     const handler = createApiHandler({
@@ -496,6 +798,7 @@ describe("Cafe Weather API handlers", () => {
           name: "A new cafe",
           address: "100 Queen Street West, Toronto",
           reason: "A thoughtful local recommendation.",
+          submissionId,
         }),
       }),
     );
@@ -526,6 +829,7 @@ describe("Cafe Weather API handlers", () => {
         address: "100 Queen Street West, Toronto",
         reason: "A thoughtful local recommendation.",
         turnstileToken: "invalid-token",
+        submissionId,
       }),
     });
 
@@ -555,6 +859,7 @@ describe("Cafe Weather API handlers", () => {
         address: "100 Queen Street West, Toronto",
         reason: "A thoughtful local recommendation.",
         turnstileToken: "valid-token",
+        submissionId,
       }),
     });
 

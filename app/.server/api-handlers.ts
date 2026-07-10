@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { reactionKinds } from "../contracts/community";
 import type { CafeFilters } from "../contracts/filters";
 import type {
   CatalogueRepository,
@@ -19,27 +20,54 @@ import {
   CommunityService,
   type TurnstileVerifier,
 } from "./services/community";
-import { getVisitorIdentity } from "./visitor";
+import { getVisitorIdentity, hmacHex } from "./visitor";
 
 const MAX_BODY_BYTES = 16_384;
-const reactionKindSchema = z.enum([
-  "cozy",
-  "quiet",
-  "work-friendly",
-  "date-friendly",
-  "late-night",
-  "great-coffee",
-  "great-tea",
-]);
-const suggestionSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  address: z.string().trim().min(5).max(240),
-  mapUrl: z.url().startsWith("https://").optional(),
-  reason: z.string().trim().min(10).max(1_000),
-  recommendation: z.string().trim().max(500).optional(),
-  website: z.string().max(500).optional().default(""),
-  turnstileToken: z.string().max(2_048).optional(),
-});
+const reactionKindSchema = z.enum(reactionKinds);
+function blankStringToUndefined(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const optionalAddressSchema = z.preprocess(
+  blankStringToUndefined,
+  z.string().min(5).max(240).optional(),
+);
+const optionalMapUrlSchema = z.preprocess(
+  blankStringToUndefined,
+  z
+    .url()
+    .max(2_048)
+    .refine((value) => new URL(value).protocol === "https:", {
+      message: "Map URL must use HTTPS.",
+    })
+    .optional(),
+);
+
+const suggestionSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    address: optionalAddressSchema,
+    mapUrl: optionalMapUrlSchema,
+    reason: z.string().trim().min(10).max(1_000),
+    recommendation: z.preprocess(
+      blankStringToUndefined,
+      z.string().max(500).optional(),
+    ),
+    website: z.string().max(500).optional().default(""),
+    turnstileToken: z.preprocess(
+      blankStringToUndefined,
+      z.string().max(2_048).optional(),
+    ),
+    submissionId: z.uuid().max(36),
+  })
+  .superRefine(({ address, mapUrl }, context) => {
+    if (address || mapUrl) return;
+    const message = "Enter an address or an HTTPS map URL.";
+    context.addIssue({ code: "custom", path: ["address"], message });
+    context.addIssue({ code: "custom", path: ["mapUrl"], message });
+  });
 
 export type ApiDependencies = Readonly<{
   catalogueRepository?: CatalogueRepository;
@@ -56,10 +84,27 @@ export type ApiDependencies = Readonly<{
 type ApiEnv = Env & {
   DB?: D1Database;
   VISITOR_HMAC_SECRET?: string;
+  TURNSTILE_SITE_KEY?: string;
   TURNSTILE_SECRET?: string;
   TURNSTILE_HOSTNAME?: string;
   TURNSTILE_ACTION?: string;
 };
+
+export function normalizeOptionalEnvString(
+  value: string | undefined,
+): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+export function communityPublicConfigFromEnv(env: {
+  TURNSTILE_SITE_KEY?: string;
+}): { turnstileSiteKey?: string } {
+  const turnstileSiteKey = normalizeOptionalEnvString(
+    env.TURNSTILE_SITE_KEY,
+  );
+  return turnstileSiteKey ? { turnstileSiteKey } : {};
+}
 
 export function createApiHandlerFromEnv(env: Env) {
   const apiEnv = env as ApiEnv;
@@ -70,10 +115,10 @@ export function createApiHandlerFromEnv(env: Env) {
     communityRepository: apiEnv.DB
       ? new D1CommunityRepository(apiEnv.DB)
       : undefined,
-    visitorSecret: apiEnv.VISITOR_HMAC_SECRET,
-    turnstileSecret: apiEnv.TURNSTILE_SECRET,
-    turnstileHostname: apiEnv.TURNSTILE_HOSTNAME,
-    turnstileAction: apiEnv.TURNSTILE_ACTION,
+    visitorSecret: normalizeOptionalEnvString(apiEnv.VISITOR_HMAC_SECRET),
+    turnstileSecret: normalizeOptionalEnvString(apiEnv.TURNSTILE_SECRET),
+    turnstileHostname: normalizeOptionalEnvString(apiEnv.TURNSTILE_HOSTNAME),
+    turnstileAction: normalizeOptionalEnvString(apiEnv.TURNSTILE_ACTION),
   });
 }
 
@@ -193,7 +238,7 @@ function isProductionRequest(request: Request, configured?: boolean): boolean {
   );
 }
 
-function visitorSecretForWrite(
+function visitorSecretForCommunity(
   request: Request,
   dependencies: ApiDependencies,
 ): { secret: string; production: boolean } {
@@ -225,6 +270,7 @@ function allowedMethods(path: string): readonly string[] | null {
     return ["GET"];
   }
   if (path === "/api/v1/suggestions") return ["POST"];
+  if (/^\/api\/v1\/cafes\/[^/]+\/reactions$/u.test(path)) return ["GET"];
   if (/^\/api\/v1\/cafes\/[^/]+\/reactions\/[^/]+$/u.test(path)) {
     return ["PUT", "DELETE"];
   }
@@ -306,7 +352,7 @@ export function createApiHandler(dependencies: ApiDependencies) {
             "The submission was rejected.",
           );
         }
-        const { secret, production } = visitorSecretForWrite(
+        const { secret, production } = visitorSecretForCommunity(
           request,
           dependencies,
         );
@@ -332,6 +378,10 @@ export function createApiHandler(dependencies: ApiDependencies) {
           secret,
         );
         const suggestion = await community.createSuggestion({
+          id: await hmacHex(
+            secret,
+            `suggestion:${visitor.visitorHash}:${parsed.data.submissionId}`,
+          ),
           name: parsed.data.name,
           address: parsed.data.address,
           mapUrl: parsed.data.mapUrl,
@@ -369,7 +419,7 @@ export function createApiHandler(dependencies: ApiDependencies) {
         if (!detail.cafe) {
           throw new HttpError(404, "cafe_not_found", "Cafe not found.");
         }
-        const { secret, production } = visitorSecretForWrite(
+        const { secret, production } = visitorSecretForCommunity(
           request,
           dependencies,
         );
@@ -400,6 +450,36 @@ export function createApiHandler(dependencies: ApiDependencies) {
               );
         return withCookie(
           Response.json({ reaction: result }),
+          visitor.setCookie,
+        );
+      }
+
+      const reactions = path.match(
+        /^\/api\/v1\/cafes\/([^/]+)\/reactions$/u,
+      );
+      if (reactions && request.method === "GET") {
+        const detail = await catalogue.findBySlug(
+          decodePathSegment(reactions[1]),
+        );
+        if (!detail.cafe) {
+          throw new HttpError(404, "cafe_not_found", "Cafe not found.");
+        }
+        const { secret } = visitorSecretForCommunity(request, dependencies);
+        const visitor = await getVisitorIdentity(request, secret);
+        const result = await community.listReactions(
+          detail.cafe.id,
+          visitor.visitorHash,
+        );
+        return withCookie(
+          Response.json(
+            { reactions: result },
+            {
+              headers: {
+                "cache-control": "private, no-store",
+                vary: "Cookie",
+              },
+            },
+          ),
           visitor.setCookie,
         );
       }

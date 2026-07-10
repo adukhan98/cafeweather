@@ -36,4 +36,11 @@ describe("API v1 resource route registration", () => {
       expect(resource.action).toBeTypeOf("function");
     }
   });
+
+  it("provides a resource adapter for the aggregate reactions endpoint", async () => {
+    const resource = await import("../../app/routes/api.reactions");
+
+    expect(resource.loader).toBeTypeOf("function");
+    expect(resource.action).toBeTypeOf("function");
+  });
 });

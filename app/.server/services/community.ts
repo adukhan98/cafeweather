@@ -4,6 +4,11 @@ import {
   type RateLimitAttempt,
   type SuggestionRecord,
 } from "../db/repositories";
+import {
+  reactionKinds,
+  type ReactionAggregate,
+  type ReactionKind,
+} from "../../contracts/community";
 import { HttpError } from "../http-errors";
 
 export type TurnstileVerification = Readonly<{
@@ -201,18 +206,55 @@ export class CommunityService {
     return result;
   }
 
-  async addReaction(cafeId: string, visitorHash: string, kind: string) {
+  async listReactions(
+    cafeId: string,
+    visitorHash: string,
+  ): Promise<readonly ReactionAggregate[]> {
+    const stored = await this.write(() =>
+      this.available().listReactions(cafeId, visitorHash),
+    );
+    const byKind = new Map(stored.map((reaction) => [reaction.kind, reaction]));
+    return reactionKinds.map(
+      (kind) => byKind.get(kind) ?? { kind, count: 0, active: false },
+    );
+  }
+
+  async addReaction(
+    cafeId: string,
+    visitorHash: string,
+    kind: ReactionKind,
+  ) {
     const changed = await this.write(() =>
       this.available().addReaction(cafeId, visitorHash, kind),
     );
-    return { active: true, changed };
+    const reaction = (await this.listReactions(cafeId, visitorHash)).find(
+      (entry) => entry.kind === kind,
+    );
+    return {
+      kind,
+      active: reaction?.active ?? false,
+      changed,
+      count: reaction?.count ?? 0,
+    };
   }
 
-  async removeReaction(cafeId: string, visitorHash: string, kind: string) {
+  async removeReaction(
+    cafeId: string,
+    visitorHash: string,
+    kind: ReactionKind,
+  ) {
     const changed = await this.write(() =>
       this.available().removeReaction(cafeId, visitorHash, kind),
     );
-    return { active: false, changed };
+    const reaction = (await this.listReactions(cafeId, visitorHash)).find(
+      (entry) => entry.kind === kind,
+    );
+    return {
+      kind,
+      active: reaction?.active ?? false,
+      changed,
+      count: reaction?.count ?? 0,
+    };
   }
 
   async createSuggestion(suggestion: SuggestionRecord) {

@@ -1,8 +1,10 @@
 import type { Cafe } from "../../contracts/cafes";
+import type { ReactionKind } from "../../contracts/community";
 
 export type SuggestionRecord = Readonly<{
+  id: string;
   name: string;
-  address: string;
+  address?: string;
   mapUrl?: string;
   reason: string;
   recommendation?: string;
@@ -12,6 +14,12 @@ export type SuggestionRecord = Readonly<{
 export type PendingSuggestion = Readonly<{
   id: string;
   status: "pending";
+}>;
+
+export type ReactionAggregateRecord = Readonly<{
+  kind: ReactionKind;
+  count: number;
+  active: boolean;
 }>;
 
 export interface CatalogueRepository {
@@ -54,13 +62,17 @@ export interface CommunityRepository {
   addReaction(
     cafeId: string,
     visitorHash: string,
-    kind: string,
+    kind: ReactionKind,
   ): Promise<boolean>;
   removeReaction(
     cafeId: string,
     visitorHash: string,
-    kind: string,
+    kind: ReactionKind,
   ): Promise<boolean>;
+  listReactions(
+    cafeId: string,
+    visitorHash: string,
+  ): Promise<readonly ReactionAggregateRecord[]>;
   createSuggestion(suggestion: SuggestionRecord): Promise<PendingSuggestion>;
   consumeRateLimit(attempt: RateLimitAttempt): Promise<RateLimitResult>;
 }
@@ -242,7 +254,7 @@ export class D1CommunityRepository implements CommunityRepository {
   async addReaction(
     cafeId: string,
     visitorHash: string,
-    kind: string,
+    kind: ReactionKind,
   ): Promise<boolean> {
     try {
       const result = await this.db
@@ -262,7 +274,7 @@ export class D1CommunityRepository implements CommunityRepository {
   async removeReaction(
     cafeId: string,
     visitorHash: string,
-    kind: string,
+    kind: ReactionKind,
   ): Promise<boolean> {
     try {
       const result = await this.db
@@ -278,28 +290,55 @@ export class D1CommunityRepository implements CommunityRepository {
     }
   }
 
+  async listReactions(
+    cafeId: string,
+    visitorHash: string,
+  ): Promise<readonly ReactionAggregateRecord[]> {
+    try {
+      const result = await this.db
+        .prepare(
+          `SELECT
+             kind,
+             COUNT(*) AS count,
+             MAX(CASE WHEN visitor_hash = ? THEN 1 ELSE 0 END) AS active
+           FROM reactions
+           WHERE cafe_id = ?
+           GROUP BY kind`,
+        )
+        .bind(visitorHash, cafeId)
+        .all<{ kind: ReactionKind; count: number; active: number }>();
+      return result.results.map(({ kind, count, active }) => ({
+        kind,
+        count,
+        active: active === 1,
+      }));
+    } catch (error) {
+      return communityFailure(error);
+    }
+  }
+
   async createSuggestion(
     suggestion: SuggestionRecord,
   ): Promise<PendingSuggestion> {
     try {
-      const id = crypto.randomUUID();
       await this.db
         .prepare(
           `INSERT INTO suggestions
             (id, name, address, map_url, reason, recommendation, visitor_hash)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO NOTHING`,
         )
         .bind(
-          id,
+          suggestion.id,
           suggestion.name,
-          suggestion.address,
+          suggestion.address ?? null,
           suggestion.mapUrl ?? null,
           suggestion.reason,
           suggestion.recommendation ?? null,
           suggestion.visitorHash,
         )
         .run();
-      return { id, status: "pending" };
+      return { id: suggestion.id, status: "pending" };
     } catch (error) {
       return communityFailure(error);
     }
