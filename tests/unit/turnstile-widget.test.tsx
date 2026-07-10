@@ -104,7 +104,7 @@ describe("TurnstileWidget", () => {
     expect(turnstile.render).not.toHaveBeenCalled();
   });
 
-  it("loads only the official explicit-render script when the API is absent", () => {
+  it("loads only the official explicit-render script when the API is absent", async () => {
     render(
       <TurnstileWidget
         siteKey="site-key-public"
@@ -122,5 +122,73 @@ describe("TurnstileWidget", () => {
     );
     expect(script?.async).toBe(true);
     expect(script?.defer).toBe(true);
+
+    act(() => script?.dispatchEvent(new Event("error")));
+    expect(await screen.findByText(/verification is unavailable/i)).toBeInTheDocument();
+  });
+
+  it("removes a failed script so a subsequent mount can retry", async () => {
+    const first = render(
+      <TurnstileWidget
+        siteKey="site-key-public"
+        action="suggestion"
+        resetNonce={0}
+        onTokenChange={vi.fn()}
+      />,
+    );
+    const failedScript = document.querySelector<HTMLScriptElement>(
+      "script[data-cafe-weather-turnstile]",
+    )!;
+
+    act(() => failedScript.dispatchEvent(new Event("error")));
+    expect(await screen.findByText(/verification is unavailable/i)).toBeInTheDocument();
+    expect(failedScript).not.toBeInTheDocument();
+    first.unmount();
+
+    render(
+      <TurnstileWidget
+        siteKey="site-key-public"
+        action="suggestion"
+        resetNonce={0}
+        onTokenChange={vi.fn()}
+      />,
+    );
+    const retryScript = document.querySelector<HTMLScriptElement>(
+      "script[data-cafe-weather-turnstile]",
+    )!;
+    expect(retryScript).not.toBe(failedScript);
+
+    const { turnstile } = installTurnstile();
+    act(() => retryScript.dispatchEvent(new Event("load")));
+
+    await waitFor(() => expect(turnstile.render).toHaveBeenCalledOnce());
+  });
+
+  it("times out a stalled script load and clears it for a retry", async () => {
+    vi.useFakeTimers();
+    try {
+      const onTokenChange = vi.fn();
+      render(
+        <TurnstileWidget
+          siteKey="site-key-public"
+          action="suggestion"
+          resetNonce={0}
+          onTokenChange={onTokenChange}
+        />,
+      );
+      const stalledScript = document.querySelector<HTMLScriptElement>(
+        "script[data-cafe-weather-turnstile]",
+      )!;
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+
+      expect(stalledScript).not.toBeInTheDocument();
+      expect(screen.getByText(/verification is unavailable/i)).toBeInTheDocument();
+      expect(onTokenChange).toHaveBeenCalledWith(null);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

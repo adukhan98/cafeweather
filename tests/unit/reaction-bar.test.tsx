@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -186,5 +186,92 @@ describe("ReactionBar", () => {
     expect(capturedSignal?.aborted).toBe(false);
     unmount();
     expect(capturedSignal?.aborted).toBe(true);
+  });
+
+  it("ignores a late initial response from the previous slug", async () => {
+    const firstLoad = deferred<typeof loadedReactions>();
+    const secondLoad = deferred<typeof loadedReactions>();
+    const loadSignals: AbortSignal[] = [];
+    const getReactions = vi
+      .fn()
+      .mockImplementationOnce((_slug, signal: AbortSignal) => {
+        loadSignals.push(signal);
+        return firstLoad.promise;
+      })
+      .mockImplementationOnce((_slug, signal: AbortSignal) => {
+        loadSignals.push(signal);
+        return secondLoad.promise;
+      });
+    const view = render(<ReactionBar slug="cafe-a" api={api({ getReactions })} />);
+
+    view.rerender(<ReactionBar slug="cafe-b" api={api({ getReactions })} />);
+    expect(loadSignals[0]?.aborted).toBe(true);
+    expect(loadSignals[1]?.aborted).toBe(false);
+    secondLoad.resolve(
+      loadedReactions.map((reaction) =>
+        reaction.kind === "cozy" ? { ...reaction, count: 22 } : reaction,
+      ),
+    );
+    expect(await screen.findByRole("button", { name: /Cozy, 22 reactions/i })).toBeEnabled();
+
+    await act(async () => {
+      firstLoad.resolve(
+        loadedReactions.map((reaction) =>
+          reaction.kind === "cozy" ? { ...reaction, count: 99 } : reaction,
+        ),
+      );
+      await firstLoad.promise;
+    });
+
+    expect(screen.getByRole("button", { name: /Cozy, 22 reactions/i })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /Cozy, 99 reactions/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps a new-slug mutation authoritative when an aborted old mutation settles late", async () => {
+    const oldMutation = deferred<ReactionMutation>();
+    const newMutation = deferred<ReactionMutation>();
+    const mutationSignals: AbortSignal[] = [];
+    const setReaction = vi
+      .fn()
+      .mockImplementationOnce((_slug, _kind, _desired, signal: AbortSignal) => {
+        mutationSignals.push(signal);
+        return oldMutation.promise;
+      })
+      .mockImplementationOnce((_slug, _kind, _desired, signal: AbortSignal) => {
+        mutationSignals.push(signal);
+        return newMutation.promise;
+      });
+    const getReactions = vi
+      .fn()
+      .mockResolvedValueOnce(loadedReactions)
+      .mockResolvedValueOnce(
+        loadedReactions.map((reaction) =>
+          reaction.kind === "cozy" ? { ...reaction, count: 10 } : reaction,
+        ),
+      );
+    const client = api({ getReactions, setReaction });
+    const user = userEvent.setup();
+    const view = render(<ReactionBar slug="cafe-a" api={client} />);
+
+    await user.click(await screen.findByRole("button", { name: /Cozy, 1 reaction/i }));
+    view.rerender(<ReactionBar slug="cafe-b" api={client} />);
+    expect(mutationSignals[0]?.aborted).toBe(true);
+
+    const newCozy = await screen.findByRole("button", { name: /Cozy, 10 reactions/i });
+    expect(newCozy).toBeEnabled();
+    await user.click(newCozy);
+    expect(newCozy).toBeDisabled();
+    expect(newCozy).toHaveTextContent("11");
+
+    await act(async () => {
+      oldMutation.resolve({ kind: "cozy", count: 91, active: true, changed: true });
+      await oldMutation.promise;
+    });
+
+    expect(screen.getByRole("button", { name: /Cozy, 11 reactions/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Cozy, 91 reactions/i })).not.toBeInTheDocument();
+
+    newMutation.resolve({ kind: "cozy", count: 12, active: true, changed: true });
+    expect(await screen.findByRole("button", { name: /Cozy, 12 reactions/i })).toBeEnabled();
   });
 });

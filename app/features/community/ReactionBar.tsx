@@ -17,6 +17,13 @@ type FailedMutation = Readonly<{
   message: string;
 }>;
 
+type RequestScope = object;
+
+type MutationRequest = Readonly<{
+  controller: AbortController;
+  scope: RequestScope;
+}>;
+
 function emptyReactions(): readonly ReactionAggregate[] {
   return reactionKinds.map((kind) => ({ kind, count: 0, active: false }));
 }
@@ -76,8 +83,8 @@ export function ReactionBar({
     Readonly<Partial<Record<ReactionKind, FailedMutation>>>
   >({});
   const [announcement, setAnnouncement] = useState("");
-  const mounted = useRef(true);
-  const mutationControllers = useRef(new Map<ReactionKind, AbortController>());
+  const activeScope = useRef<RequestScope | null>(null);
+  const mutationControllers = useRef(new Map<ReactionKind, MutationRequest>());
 
   const replaceReactions = useCallback(
     (
@@ -95,16 +102,19 @@ export function ReactionBar({
   );
 
   useEffect(() => {
-    mounted.current = true;
+    const scope: RequestScope = {};
+    activeScope.current = scope;
     const controller = new AbortController();
     setLoaded(false);
     setLoadError(undefined);
+    setPending(new Set());
+    setFailures({});
     setAnnouncement("Loading community reactions.");
 
     void api
       .getReactions(slug, controller.signal)
       .then((result) => {
-        if (!mounted.current) return;
+        if (activeScope.current !== scope) return;
         const next = orderedReactions(result);
         reactionsRef.current = next;
         setReactions(next);
@@ -112,19 +122,22 @@ export function ReactionBar({
         setAnnouncement("Community reactions loaded.");
       })
       .catch((error: unknown) => {
-        if (!mounted.current || isAbort(error)) return;
+        if (activeScope.current !== scope || isAbort(error)) return;
         const message = failureCopy(error);
         setLoadError(message);
         setAnnouncement(message);
       });
 
     return () => {
-      mounted.current = false;
+      if (activeScope.current === scope) activeScope.current = null;
       controller.abort();
-      for (const mutation of mutationControllers.current.values()) {
-        mutation.abort();
+      for (const [kind, mutation] of mutationControllers.current) {
+        if (mutation.scope !== scope) continue;
+        mutation.controller.abort();
+        if (mutationControllers.current.get(kind) === mutation) {
+          mutationControllers.current.delete(kind);
+        }
       }
-      mutationControllers.current.clear();
     };
   }, [api, loadAttempt, slug]);
 
@@ -134,10 +147,12 @@ export function ReactionBar({
       const snapshot = reactionsRef.current.find(
         (reaction) => reaction.kind === kind,
       );
-      if (!snapshot) return;
+      const scope = activeScope.current;
+      if (!snapshot || !scope) return;
 
       const controller = new AbortController();
-      mutationControllers.current.set(kind, controller);
+      const mutation: MutationRequest = { controller, scope };
+      mutationControllers.current.set(kind, mutation);
       setPending((current) => new Set(current).add(kind));
       setFailures((current) => ({ ...current, [kind]: undefined }));
       replaceReactions((current) =>
@@ -160,7 +175,7 @@ export function ReactionBar({
           desired,
           controller.signal,
         );
-        if (!mounted.current) return;
+        if (activeScope.current !== scope) return;
         replaceReactions((current) =>
           current.map((reaction) =>
             reaction.kind === kind
@@ -174,7 +189,7 @@ export function ReactionBar({
         );
         setAnnouncement(`${reactionLabels[kind]} reaction saved.`);
       } catch (error) {
-        if (!mounted.current || isAbort(error)) return;
+        if (activeScope.current !== scope || isAbort(error)) return;
         replaceReactions((current) =>
           current.map((reaction) =>
             reaction.kind === kind ? snapshot : reaction,
@@ -187,8 +202,10 @@ export function ReactionBar({
         }));
         setAnnouncement(message);
       } finally {
-        mutationControllers.current.delete(kind);
-        if (mounted.current) {
+        if (mutationControllers.current.get(kind) === mutation) {
+          mutationControllers.current.delete(kind);
+        }
+        if (activeScope.current === scope) {
           setPending((current) => {
             const next = new Set(current);
             next.delete(kind);
