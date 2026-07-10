@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight } from "@phosphor-icons/react";
+import { useLocation } from "react-router";
+
+import { BrandLockup } from "../brand/BrandLockup";
 
 const destinations = [
-  { label: "Browse", href: "/cafes" },
-  { label: "Map", href: "/cafes?view=map" },
-  { label: "Roulette", href: "/roulette" },
-  { label: "Suggest", href: "/suggest" },
+  { label: "Browse", href: "/cafes", activePath: "/cafes" },
+  { label: "Map", href: "/cafes?view=map", activePath: "/cafes" },
+  { label: "Roulette", href: "/roulette", activePath: "/roulette" },
+  { label: "Suggest", href: "/suggest", activePath: "/suggest" },
 ] as const;
 
 export function Masthead() {
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const mastheadRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -56,43 +60,50 @@ export function Masthead() {
     setMenuOpen(true);
   };
 
+  const isCurrent = (destination: (typeof destinations)[number]) => {
+    if (location.pathname !== destination.activePath) return false;
+    const isMapView = new URLSearchParams(location.search).get("view") === "map";
+    if (destination.label === "Map") return isMapView;
+    if (destination.label === "Browse") return !isMapView;
+    return true;
+  };
+
   return (
     <header ref={mastheadRef} className="masthead">
-      <div className="masthead__top-row">
-        <a className="masthead__wordmark" href="/" aria-label="Café Weather home">
-          Café Weather
-        </a>
+      <div className="masthead__receipt">
+        <div className="masthead__top-row">
+          <BrandLockup descriptor />
 
-        <nav className="masthead__desktop-nav" aria-label="Primary">
-          <ul>
-            {destinations.map((destination) => (
-              <li key={destination.label}>
-                <a href={destination.href}>{destination.label}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          <nav className="masthead__desktop-nav" aria-label="Primary">
+            <ul>
+              {destinations.map((destination) => (
+                <li key={destination.label}>
+                  <a
+                    href={destination.href}
+                    aria-current={isCurrent(destination) ? "page" : undefined}
+                  >
+                    {destination.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-        <button
-          ref={toggleRef}
-          className="masthead__toggle"
-          type="button"
-          aria-controls="mobile-navigation"
-          aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          onClick={toggleMenu}
-        >
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-        </button>
-      </div>
+          <button
+            ref={toggleRef}
+            className="site-nav__toggle"
+            type="button"
+            aria-controls="mobile-navigation"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={toggleMenu}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
+        </div>
 
-      <div className="masthead__rule" aria-hidden="true" />
-
-      <div className="masthead__location" aria-label="Guide location">
-        <span>Toronto, Ontario</span>
-        <span>Toronto cafés for the mood you’re in.</span>
+        <p className="masthead__edition">Toronto · 36 places</p>
       </div>
 
       <nav
@@ -100,6 +111,7 @@ export function Masthead() {
         className="masthead__mobile-nav"
         aria-label="Mobile"
         hidden={!menuOpen}
+        data-state={menuOpen ? "open" : "closed"}
       >
         <ul>
           {destinations.map((destination, index) => (
@@ -107,6 +119,7 @@ export function Masthead() {
               <a
                 ref={index === 0 ? firstMobileLinkRef : undefined}
                 href={destination.href}
+                aria-current={isCurrent(destination) ? "page" : undefined}
                 onClick={() => closeMenu("main")}
               >
                 {destination.label}

@@ -10,37 +10,34 @@ import {
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { renderToString } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { AppShell } from "../../app/components/AppShell";
 
-function renderShell() {
+function renderShell(pathname = "/roulette") {
   return render(
-    <AppShell>
-      <h1>Shell test content</h1>
-    </AppShell>,
+    <MemoryRouter initialEntries={[pathname]}>
+      <AppShell>
+        <h1>Shell test content</h1>
+      </AppShell>
+    </MemoryRouter>,
   );
 }
 
 describe("AppShell", () => {
-  it("orders the masthead as top row, rule, metadata, then mobile disclosure", () => {
-    const { container } = renderShell();
-    const masthead = container.querySelector(".masthead");
-    const topRow = container.querySelector(".masthead__top-row");
-    const rule = container.querySelector(".masthead__rule");
-    const metadata = screen.getByLabelText("Guide location");
-    const mobileNavigation = container.querySelector(".masthead__mobile-nav");
+  it("publishes the warm guide identity and current destination", () => {
+    renderShell();
 
-    expect(masthead).not.toBeNull();
-    expect(topRow).not.toBeNull();
-    expect(topRow).toContainElement(screen.getByRole("link", { name: "Café Weather home" }));
-    expect(topRow).toContainElement(screen.getByRole("navigation", { name: "Primary" }));
-    expect(Array.from(masthead!.children)).toEqual([
-      topRow,
-      rule,
-      metadata,
-      mobileNavigation,
-    ]);
+    expect(
+      screen.getAllByRole("link", { name: "Meet Me There home" })[0],
+    ).toBeVisible();
+    const primary = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(primary).getByRole("link", { name: "Roulette" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByText("Toronto · 36 places")).toBeVisible();
   });
 
   it("moves focus to main content when the skip link is activated", async () => {
@@ -68,6 +65,29 @@ describe("AppShell", () => {
     }
   });
 
+  it("distinguishes the browse index from its map view", () => {
+    const { unmount } = renderShell("/cafes");
+    let primary = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(primary).getByRole("link", { name: "Browse" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(primary).getByRole("link", { name: "Map" })).not.toHaveAttribute(
+      "aria-current",
+    );
+
+    unmount();
+    renderShell("/cafes?view=map");
+    primary = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(primary).getByRole("link", { name: "Map" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(primary).getByRole("link", { name: "Browse" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
+
   it("discloses the mobile menu and restores focus when it closes", async () => {
     const user = userEvent.setup();
     renderShell();
@@ -77,6 +97,7 @@ describe("AppShell", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     const mobileNavigation = screen.getByRole("navigation", { name: "Mobile" });
     expect(mobileNavigation).toBeVisible();
+    expect(mobileNavigation).toHaveAttribute("data-state", "open");
 
     expect(within(mobileNavigation).getByRole("link", { name: "Browse" })).toHaveFocus();
     await user.keyboard("{Escape}");
@@ -122,9 +143,11 @@ describe("AppShell", () => {
   it("renders safely on the server", () => {
     expect(() =>
       renderToString(
-        <AppShell>
-          <p>Server content</p>
-        </AppShell>,
+        <MemoryRouter>
+          <AppShell>
+            <p>Server content</p>
+          </AppShell>
+        </MemoryRouter>,
       ),
     ).not.toThrow();
   });

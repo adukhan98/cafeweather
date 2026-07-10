@@ -4,11 +4,12 @@ import { createRenderErrorHandler } from "../../app/entry.server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router";
 import { cafes } from "../../app/data/cafes";
 import { DiscoveryHome } from "../../app/features/discovery/DiscoveryHome";
 import { cloudflareContext, createWorkerFetch } from "../../workers/app";
 
-describe("Cafe Weather scaffold", () => {
+describe("Meet Me There scaffold", () => {
   it("preserves the slug on a verified launch Cafe record", () => {
     const cafe = cafes[0] satisfies cafeContract.Cafe;
 
@@ -16,13 +17,17 @@ describe("Cafe Weather scaffold", () => {
     expect(cafe.slug).toBe("larrys-place-parkdale");
   });
 
-  it("renders the Cafe Weather homepage on the server", () => {
+  it("renders the Meet Me There homepage on the server", () => {
     const markup = renderToStaticMarkup(
-      createElement(AppShell, null, createElement(DiscoveryHome, { cafes })),
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(AppShell, null, createElement(DiscoveryHome, { cafes })),
+      ),
     );
 
-    expect(markup).toContain("Café Weather");
-    expect(markup).toContain("Toronto cafés for the mood you’re in.");
+    expect(markup).toContain("Meet Me There");
+    expect(markup).toContain("A better answer to “where?”");
     expect(markup).toContain("For a quiet afternoon");
   });
 

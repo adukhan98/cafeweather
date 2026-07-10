@@ -2,6 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router";
 import { BrandLockup } from "../../app/features/brand/BrandLockup";
 import {
   CupRing,
@@ -18,12 +19,14 @@ import { readStyleSource } from "../helpers/style-source";
 describe("Meet Me There brand primitives", () => {
   it("renders semantic brand materials without baking in route logic", () => {
     render(
-      <Scene as="section" tone="terracotta" label="Invitation scene">
-        <BrandLockup descriptor />
-        <InvitationNote as="article" tilt="left">
-          Church Street at five.
-        </InvitationNote>
-      </Scene>,
+      <MemoryRouter>
+        <Scene as="section" tone="terracotta" label="Invitation scene">
+          <BrandLockup descriptor />
+          <InvitationNote as="article" tilt="left">
+            Church Street at five.
+          </InvitationNote>
+        </Scene>
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText("Invitation scene")).toHaveAttribute(

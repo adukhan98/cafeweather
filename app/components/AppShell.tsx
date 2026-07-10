@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-brand="meet-me-there">
       <a className="skip-link" href="#main-content" onClick={focusMainContent}>
         Skip to content
       </a>
