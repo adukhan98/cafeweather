@@ -1,0 +1,11 @@
+{
+  "date": "2026-07-10",
+  "framework": "React Router 8 with React 19",
+  "styling": "Tailwind CSS 4 via @tailwindcss/vite",
+  "fonts_before": "none",
+  "palette_before": "none",
+  "motion": "CSS motion only; no motion library",
+  "spacing_before": "none",
+  "preserve": ["React Router app shell", "Tailwind CSS entry import"],
+  "introduce": ["Garden OKLCH tokens", "Newsreader and IBM Plex Sans", "N6 masthead", "Ft1 footer", "accessible CSS microinteractions"]
+}

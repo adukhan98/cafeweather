@@ -1,4 +1,5 @@
 import * as cafeContract from "../../app/contracts/cafes";
+import { AppShell } from "../../app/components/AppShell";
 import { createRenderErrorHandler } from "../../app/entry.server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -16,9 +17,12 @@ describe("Cafe Weather scaffold", () => {
   });
 
   it("renders the Cafe Weather homepage on the server", () => {
-    const markup = renderToStaticMarkup(createElement(Home));
+    const markup = renderToStaticMarkup(
+      createElement(AppShell, null, createElement(Home)),
+    );
 
     expect(markup).toContain("Café Weather");
+    expect(markup).toContain("shell-placeholder");
   });
 
   it("marks the response as failed when server rendering errors", () => {

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import "@fontsource-variable/ibm-plex-sans/wght.css";
+import "@fontsource-variable/newsreader/wght.css";
 import {
   Links,
   Meta,
@@ -8,13 +10,17 @@ import {
 } from "react-router";
 
 import "./app.css";
+import { AppShell } from "./components/AppShell";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         <Meta />
         <Links />
       </head>
@@ -28,5 +34,9 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
 }

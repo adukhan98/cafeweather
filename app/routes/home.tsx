@@ -11,10 +11,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return (
-    <main>
-      <h1>Café Weather</h1>
-      <p>Find a Toronto café that fits the day.</p>
-    </main>
-  );
+  return <div className="shell-placeholder" aria-hidden="true" />;
 }
