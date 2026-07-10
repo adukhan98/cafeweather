@@ -5,6 +5,10 @@ import { readStyleSource } from "../helpers/style-source";
 const css = readStyleSource();
 const tokens = readFileSync(new URL("../../tokens.css", import.meta.url), "utf8");
 const root = readFileSync(new URL("../../app/root.tsx", import.meta.url), "utf8");
+const catalogueCss = readFileSync(
+  new URL("../../app/styles/catalogue.css", import.meta.url),
+  "utf8",
+);
 const hallmarkLog = JSON.parse(
   readFileSync(new URL("../../.hallmark/log.json", import.meta.url), "utf8"),
 ) as Array<{
@@ -109,5 +113,19 @@ describe("Meet Me There design-system contract", () => {
     expect(root).toContain('import "./fonts/latin-wght.css"');
     expect(root).not.toContain("@fontsource-variable/ibm-plex-sans/wght.css");
     expect(root).not.toContain("@fontsource-variable/newsreader/wght.css");
+  });
+
+  it("makes the catalogue full bleed and composes list with a dominant desktop map", () => {
+    expect(catalogueCss).toMatch(
+      /\.catalogue-page\s*\{[^}]*width: 100vw;[^}]*margin-inline: calc\(50% - 50vw\);[^}]*overflow-x: clip;/s,
+    );
+    expect(catalogueCss).toContain(
+      "grid-template-columns: minmax(20rem, 0.72fr) minmax(0, 1.28fr)",
+    );
+    expect(catalogueCss).toContain(
+      ".catalogue-results[data-mode] .catalogue-results__list",
+    );
+    expect(catalogueCss).toContain(".view-switch { display: none; }");
+    expect(catalogueCss).toContain(".catalogue-page .cafe-row");
   });
 });

@@ -46,9 +46,27 @@ describe("CafeCatalogue", () => {
       "/cafes?q=Misc&mood=coffee-nerd&neighborhood=Ossington&offering=pour-over",
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("1 café");
+    expect(document.querySelector(".catalogue-count")).toHaveTextContent("1 café");
     expect(screen.getByRole("heading", { name: "Misc Coffee" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "The Brick Room" })).not.toBeInTheDocument();
+  });
+
+  it("reports facet availability in the context of other active filters", async () => {
+    const user = userEvent.setup();
+    renderCatalogue("/cafes?q=Misc&mood=coffee-nerd");
+
+    await user.click(screen.getByLabelText("Moods filters"));
+    expect(
+      screen.getByRole("button", { name: "Remove Coffee nerd filter, 1 place" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders one list and one map surface for responsive CSS composition", () => {
+    renderCatalogue("/cafes?view=map");
+    const results = screen.getByRole("list", { name: "Café results" });
+    const map = screen.getByRole("region", { name: "Toronto café map" });
+    expect(results.closest(".catalogue-results")).toHaveAttribute("data-mode", "map");
+    expect(map.closest(".catalogue-results")).toBe(results.closest(".catalogue-results"));
   });
 
   it("synchronizes search and facet choices to a clean URL", async () => {
@@ -62,7 +80,7 @@ describe("CafeCatalogue", () => {
     const url = screen.getByLabelText("Current URL");
     await waitFor(() => expect(url).toHaveTextContent("q=Bloom"));
     expect(url).toHaveTextContent("mood=study-friendly");
-    expect(screen.getByRole("status")).toHaveTextContent("1 café");
+    expect(document.querySelector(".catalogue-count")).toHaveTextContent("1 café");
   });
 
   it("does not drop characters during rapid URL-backed search updates", async () => {
@@ -139,7 +157,7 @@ describe("CafeCatalogue", () => {
     const results = screen.getByRole("list", { name: "Café results" });
     expect(within(results).getByRole("heading", { name: "Misc Coffee" })).toBeInTheDocument();
     expect(within(results).getByRole("heading", { name: "The Brick Room" })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("2 cafés");
+    expect(document.querySelector(".catalogue-count")).toHaveTextContent("2 cafés");
   });
 
   it("switches between list and map without losing active filters", async () => {
@@ -222,7 +240,9 @@ describe("CafeCatalogue", () => {
     await user.click(screen.getByRole("button", { name: "Reset all filters" }));
 
     expect(screen.getByLabelText("Current URL")).toHaveTextContent("/cafes");
-    expect(screen.getByRole("status")).toHaveTextContent(`${cafes.length} cafés`);
+    expect(document.querySelector(".catalogue-count")).toHaveTextContent(
+      `${cafes.length} cafés`,
+    );
     expect(screen.getByRole("searchbox", { name: "Search cafés" })).toHaveValue("");
     expect(screen.getByRole("radio", { name: "List view" })).toBeChecked();
   });
@@ -237,6 +257,8 @@ describe("CafeCatalogue", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Show all cafés" }));
-    expect(screen.getByRole("status")).toHaveTextContent(`${cafes.length} cafés`);
+    expect(document.querySelector(".catalogue-count")).toHaveTextContent(
+      `${cafes.length} cafés`,
+    );
   });
 });

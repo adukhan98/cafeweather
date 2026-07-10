@@ -103,12 +103,14 @@ export function CafeCatalogue({
     [cafes, state],
   );
   const facetCount = useCallback(
-    (facet: FacetKey, value: string) =>
-      cafes.filter((cafe) => {
+    (facet: FacetKey, value: string) => {
+      const contextualState = { ...state, [facet]: [] };
+      return filterCafes(cafes, stateToFilters(contextualState)).filter((cafe) => {
         if (facet === "neighborhoods") return cafe.neighborhood === value;
         return cafe[facet].includes(value);
-      }).length,
-    [cafes],
+      }).length;
+    },
+    [cafes, state],
   );
 
   useEffect(() => {
@@ -378,14 +380,19 @@ export function CafeCatalogue({
             Show all cafés
           </button>
         </section>
-      ) : state.view === "map" ? (
-        <CafeMap cafes={results} />
       ) : (
-        <ol className="cafe-results" aria-label="Café results">
-          {results.map((cafe) => (
-            <CafeRow key={cafe.id} cafe={cafe} />
-          ))}
-        </ol>
+        <div className="catalogue-results" data-mode={state.view}>
+          <div className="catalogue-results__list">
+            <ol className="cafe-results" aria-label="Café results">
+              {results.map((cafe) => (
+                <CafeRow key={cafe.id} cafe={cafe} />
+              ))}
+            </ol>
+          </div>
+          <div className="catalogue-results__map">
+            <CafeMap cafes={results} />
+          </div>
+        </div>
       )}
     </div>
   );
