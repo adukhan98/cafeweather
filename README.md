@@ -1,8 +1,10 @@
-# Café Weather
+# Meet Me There
 
-Toronto cafés for the mood you’re in.
+A better answer to “where?”
 
-Café Weather is a curated, branch-aware guide to independent Toronto cafés. It combines mood-led discovery, search and filters, a real map, café details, deterministic roulette, anonymous community reactions, and moderated café suggestions without inventing ratings, hours, photos, or practical attributes the source data does not support.
+Meet Me There is a warm, curated, branch-aware Toronto café guide. It combines mood-led discovery, search and filters, a real map, café details, café roulette, anonymous community reactions, and moderated café suggestions without inventing ratings, hours, photos, or practical attributes the source data does not support.
+
+Live app: [meet-me-there.adnaankhan0901.workers.dev](https://meet-me-there.adnaankhan0901.workers.dev)
 
 ## What ships
 
@@ -82,14 +84,14 @@ CI runs functional browser coverage on Ubuntu without comparing screenshots, the
 
 ## Cloudflare deployment
 
-The tracked Wrangler config is already connected to Café Weather's canonical
+The tracked Wrangler config is connected to Meet Me There's canonical
 production D1 database and Turnstile widget. Their database ID, site key, and
 hostname are public deployment identifiers; the signing and Turnstile secrets
 remain encrypted Cloudflare secrets and are never committed.
 
 To deploy the canonical production app:
 
-1. Authenticate with the Café Weather Cloudflare account:
+1. Authenticate with the Meet Me There Cloudflare account:
 
    ```bash
    npx wrangler login
@@ -122,6 +124,21 @@ account's public identifiers, allow the exact production hostname in the
 widget, then follow the migration, seed, secret, and deploy steps above.
 
 Production suggestions fail closed if visitor signing or Turnstile is missing. The upload dry run verifies `.dev.vars` is not included in the Worker bundle.
+
+The D1 database intentionally retains its existing `cafe-weather` name so the
+release does not migrate production data. After the canonical Worker has been
+deployed and verified, `wrangler.legacy.jsonc` can deploy the old `cafe-weather`
+hostname as a binding-free compatibility Worker: pages receive permanent `308`
+redirects and `/api/` requests are proxied to the canonical origin. Validate both
+bundles without changing production:
+
+```bash
+npx wrangler deploy --dry-run
+npx wrangler deploy --dry-run --config wrangler.legacy.jsonc
+```
+
+The verified editorial snapshot is public and reviewable; community reactions,
+suggestions, rate limits, and anonymous identity hashes remain private in D1.
 
 ## Project layout
 

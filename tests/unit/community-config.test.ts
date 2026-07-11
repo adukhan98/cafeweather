@@ -27,6 +27,7 @@ describe("community environment configuration", () => {
     const config = JSON.parse(
       await readFile(new URL("../../wrangler.jsonc", import.meta.url), "utf8"),
     ) as {
+      name?: string;
       vars?: Record<string, string>;
       observability?: {
         enabled?: boolean;
@@ -35,15 +36,28 @@ describe("community environment configuration", () => {
       };
       workers_dev?: boolean;
       preview_urls?: boolean;
+      d1_databases?: Array<{
+        binding: string;
+        database_name: string;
+        database_id: string;
+      }>;
     };
 
+    expect(config.name).toBe("meet-me-there");
     expect(config.vars).toEqual({
       TURNSTILE_SITE_KEY: "0x4AAAAAADzZS74IprS07VFj",
-      TURNSTILE_HOSTNAME: "cafe-weather.adnaankhan0901.workers.dev",
+      TURNSTILE_HOSTNAME: "meet-me-there.adnaankhan0901.workers.dev",
       TURNSTILE_ACTION: "suggestion",
     });
     expect(config.workers_dev).toBe(true);
     expect(config.preview_urls).toBe(false);
+    expect(config.d1_databases).toEqual([
+      {
+        binding: "DB",
+        database_name: "cafe-weather",
+        database_id: "78498833-1fd9-429e-9ec9-9f1eef756b34",
+      },
+    ]);
     expect(JSON.stringify(config)).not.toContain("TURNSTILE_SECRET");
     expect(config.observability).toEqual({
       enabled: true,
