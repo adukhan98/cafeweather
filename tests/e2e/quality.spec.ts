@@ -46,7 +46,7 @@ test("clickable labels stay legible without flattening intentional coaster copy"
       await page.goto(route, { waitUntil: "domcontentloaded" });
       const failures = await page.evaluate(() => {
         const selectors =
-          ".action-link, .text-link, .text-button, .reset-button, .masthead a, .site-footer a, .view-switch label, .suggestion-form button, summary";
+          ".action-link, .text-link, .text-button, .reset-button, .filter-tab, .cafe-row__directions, .cafe-row__meet, .cafe-map__index a, .masthead a, .site-footer a, .view-switch label, .suggestion-form button, summary";
         return Array.from(document.querySelectorAll<HTMLElement>(selectors))
           .filter((element) => {
             const style = getComputedStyle(element);
@@ -92,6 +92,37 @@ test("catalogue fieldsets and view radios use the custom control geometry", asyn
   await expect(labels.first()).toHaveCSS("min-height", "44px");
   await radio.focus();
   await expect(labels.first()).toHaveCSS("outline-style", "solid");
+
+  for (const width of [320, 375, 414]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/cafes", { waitUntil: "domcontentloaded" });
+    const filterWhiteSpace = await page
+      .locator(".filter-tab")
+      .evaluateAll((controls) =>
+        controls.map((control) => getComputedStyle(control).whiteSpace),
+      );
+    expect(filterWhiteSpace, `filter tabs at ${width}px`).not.toContain("normal");
+
+    await page.goto("/cafes?view=map", { waitUntil: "domcontentloaded" });
+    const mapIndex = await page.locator(".cafe-map__index button").evaluateAll((controls) =>
+      controls.map((control) => ({
+        display: getComputedStyle(control).display,
+        flexWrap: getComputedStyle(control).flexWrap,
+        labels: Array.from(control.children).map(
+          (label) => getComputedStyle(label).whiteSpace,
+        ),
+      })),
+    );
+    expect(mapIndex, `map index labels at ${width}px`).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          display: "flex",
+          flexWrap: "nowrap",
+          labels: ["nowrap", "nowrap"],
+        }),
+      ]),
+    );
+  }
 });
 
 test("mobile navigation is keyboard operable and reduced motion is honored", async ({ page }) => {

@@ -356,12 +356,15 @@
   min-width: 0;
   max-width: 100%;
   justify-content: space-between;
-  white-space: normal;
+  white-space: nowrap;
 }
 .filter-tab > * {
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  white-space: nowrap;
 }
 .active-filters li { width: 100%; min-width: 0; }
 .active-filters li > span { min-width: 0; overflow-wrap: anywhere; }

@@ -115,6 +115,9 @@ describe("Meet Me There design-system contract", () => {
 
   it("keeps standard controls on one line while preserving the approved coaster exception", () => {
     expect(css).toMatch(/\.filter-tab\s*\{[^}]*white-space:\s*nowrap/s);
+    expect(catalogueCss).not.toMatch(
+      /\.filter-tab(?:\s*>\s*\*)?\s*\{[^}]*white-space:\s*normal/s,
+    );
     expect(css).toMatch(/\.cafe-map__index (?:button|a),[\s\S]*?white-space:\s*nowrap/);
     expect(css).toMatch(/\.action-link,[\s\S]*?white-space:\s*nowrap/);
     expect(css).toMatch(/\.reaction-coaster__label\s*\{[^}]*-webkit-line-clamp:\s*2[^}]*white-space:\s*normal/s);
