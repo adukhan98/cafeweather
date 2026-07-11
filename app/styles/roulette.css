@@ -148,6 +148,7 @@
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .roulette-deck__actions a:nth-child(2) {

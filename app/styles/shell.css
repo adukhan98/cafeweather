@@ -270,7 +270,9 @@
   color: var(--color-honey);
   font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-style: italic;
+  font-style: normal;
+  font-variation-settings: "SOFT" 70, "WONK" 1;
+  font-weight: 620;
 }
 
 .site-footer__links {

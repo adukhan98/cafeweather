@@ -7,6 +7,9 @@
     "theme_axes": "warm-paper / expressive-serif / terracotta",
     "vibe": "warm invitation notes across Toronto",
     "enrichment": "code-native illustration plus MapLibre",
+    "critique": "P5 H4 E4 S5 R4 V4",
+    "audit": "contrast pass / slop pass / nav pass / footer pass / mobile pass",
+    "exceptions": "Gate23 approved full-scene fills; Gate49 Task9 two-line reaction coasters; short editorial measures are intentionally concise",
     "design_taste": { "variance": 9, "motion": 7, "density": 4 },
     "brief": "Meet Me There warm Toronto café discovery product"
   },

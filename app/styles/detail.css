@@ -50,6 +50,13 @@
   gap: var(--space-md);
 }
 
+.cafe-detail__hero-title {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
 .cafe-detail__hero h1 {
   max-width: 13ch;
   margin: 0;
@@ -323,9 +330,7 @@
     align-items: end;
   }
 
-  .cafe-detail__hero-copy .eyebrow,
-  .cafe-detail__hero-copy h1,
-  .cafe-detail__branch {
+  .cafe-detail__hero-title {
     grid-column: 1;
   }
 

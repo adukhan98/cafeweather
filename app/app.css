@@ -1,4 +1,9 @@
-/* Meet Me There · invitation system · variance 9 · motion 7 · density 4 */
+/* Hallmark · macrostructure: Invitation City · theme: custom · vibe: warm invitation notes across Toronto
+ * paper: oklch(94% 0.04 82) · accent: oklch(66% 0.16 33) terracotta · Fraunces Variable + IBM Plex Sans Variable
+ * diversification: warm-paper / expressive-serif / terracotta · enrichment: code-native illustration plus MapLibre
+ * Meet Me There · invitation system · variance 9 · motion 7 · density 4
+ * pre-emit critique: P5 H4 E4 S5 R4 V4 · audit: contrast pass / slop pass / nav pass / footer pass / mobile pass
+ */
 @import "tailwindcss" source(".");
 @import "../tokens.css";
 

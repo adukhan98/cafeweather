@@ -74,8 +74,10 @@ export function SuggestPage({
   return (
     <Scene as="article" tone="burgundy" className="suggest-page" label="Suggest a café">
       <header className="suggest-page__header">
-        <p className="suggest-page__eyebrow">Pass us a note</p>
-        <h1>Know a place?</h1>
+        <div className="suggest-page__heading">
+          <p className="suggest-page__eyebrow">Pass us a note</p>
+          <h1>Know a place?</h1>
+        </div>
         <p>
           Tell us the exact Toronto branch and why you would ask someone to meet
           you there.

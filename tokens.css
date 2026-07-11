@@ -16,7 +16,9 @@
   --color-accent: var(--color-terracotta);
   --color-accent-hover: var(--color-burgundy);
   --color-accent-ink: var(--color-espresso);
-  --color-focus: #165dff;
+  --color-focus-light: var(--color-espresso);
+  --color-focus-dark: var(--color-honey);
+  --color-focus: var(--color-focus-light);
   --color-error: #9f1d20;
   --color-success: #2f6a43;
   --color-shadow: rgb(142 47 45 / 35%);

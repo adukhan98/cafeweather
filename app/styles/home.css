@@ -92,6 +92,9 @@
   width: var(--target-min);
   min-width: var(--target-min);
 }
+.home-search button:active { transform: translateY(var(--rule-strong)); }
+.home-search button:disabled,
+.home-search input:disabled { opacity: 0.5; }
 
 .mood-scene {
   display: grid;
@@ -162,10 +165,7 @@
 }
 .map-scene__map {
   min-width: 0;
-  padding: var(--space-sm);
-  border: var(--rule-strong) solid var(--color-espresso);
-  background: var(--color-cream);
-  box-shadow: var(--space-sm) var(--space-sm) 0 var(--color-burgundy);
+  padding: 0;
 }
 .map-scene .cafe-map__canvas-wrap {
   min-height: clamp(24rem, 66dvh, 48rem);

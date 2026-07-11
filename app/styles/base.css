@@ -90,6 +90,20 @@ a {
   outline-offset: var(--space-2xs);
 }
 
+.scene[data-tone="cream"],
+.scene[data-tone="terracotta"],
+.scene[data-tone="honey"],
+.scene[data-tone="clay"] {
+  --color-focus: var(--color-focus-light);
+}
+
+.scene[data-tone="espresso"],
+.scene[data-tone="burgundy"],
+.site-footer,
+.cafe-detail__community {
+  --color-focus: var(--color-focus-dark);
+}
+
 .eyebrow {
   margin: 0;
   font-family: var(--font-body);
@@ -119,7 +133,9 @@ a {
 
 .action-link,
 .reset-button {
+  box-sizing: border-box;
   display: inline-flex;
+  max-width: 100%;
   min-width: 0;
   padding: var(--space-sm) var(--space-md);
   align-items: center;
@@ -133,6 +149,8 @@ a {
   font-weight: 700;
   text-decoration: none;
   transition: opacity var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+  white-space: nowrap;
+  overflow-x: auto;
 }
 
 .action-link--primary {

@@ -65,9 +65,11 @@ export function CafeDetailPage({
           Browse every café
         </a>
         <div className="cafe-detail__hero-copy">
-          <p className="eyebrow">{cafe.neighborhood}</p>
-          <h1>{cafe.name}</h1>
-          {cafe.branch ? <p className="cafe-detail__branch">{cafe.branch}</p> : null}
+          <div className="cafe-detail__hero-title">
+            <p className="eyebrow">{cafe.neighborhood}</p>
+            <h1>{cafe.name}</h1>
+            {cafe.branch ? <p className="cafe-detail__branch">{cafe.branch}</p> : null}
+          </div>
           <address className="cafe-detail__invitation">
             Meet me at {invitationAddress(cafe.address)}.
           </address>

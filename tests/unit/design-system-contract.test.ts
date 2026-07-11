@@ -40,15 +40,37 @@ function declarationsFor(selector: string) {
   );
 }
 
+function relativeLuminance(hex: string) {
+  const channels = hex.match(/[\da-f]{2}/gi)!.map((value) => {
+    const channel = Number.parseInt(value, 16) / 255;
+    return channel <= 0.04045
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: string, second: string) {
+  const values = [relativeLuminance(first), relativeLuminance(second)].sort(
+    (a, b) => b - a,
+  );
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
 describe("Meet Me There design-system contract", () => {
   it("records the approved Design Taste dials in CSS and Hallmark memory", () => {
-    expect(css).toContain("Meet Me There · invitation system");
+    expect(css).toContain("Hallmark · macrostructure: Invitation City · theme: custom");
+    expect(css).toContain("Meet Me There · invitation system · variance 9 · motion 7 · density 4");
     expect(css).not.toContain("Café Weather · Garden");
     expect(css).not.toContain("Newsreader Variable");
     expect(hallmarkLog[0]?.design_taste).toEqual({
       variance: 9,
       motion: 7,
       density: 4,
+    });
+    expect(hallmarkLog[0]).toMatchObject({
+      critique: "P5 H4 E4 S5 R4 V4",
+      audit: "contrast pass / slop pass / nav pass / footer pass / mobile pass",
     });
   });
 
@@ -85,6 +107,34 @@ describe("Meet Me There design-system contract", () => {
       outline: "var(--rule-strong) solid var(--color-focus)",
       "outline-offset": "var(--space-2xs)",
     });
+    expect(tokens).toContain("--color-focus-light: var(--color-espresso)");
+    expect(tokens).toContain("--color-focus-dark: var(--color-honey)");
+    expect(css).toMatch(/\.scene\[data-tone="burgundy"\],[\s\S]*?--color-focus: var\(--color-focus-dark\)/);
+    expect(css).toMatch(/\.scene\[data-tone="terracotta"\],[\s\S]*?--color-focus: var\(--color-focus-light\)/);
+  });
+
+  it("keeps standard controls on one line while preserving the approved coaster exception", () => {
+    expect(css).toMatch(/\.filter-tab\s*\{[^}]*white-space:\s*nowrap/s);
+    expect(css).toMatch(/\.cafe-map__index (?:button|a),[\s\S]*?white-space:\s*nowrap/);
+    expect(css).toMatch(/\.action-link,[\s\S]*?white-space:\s*nowrap/);
+    expect(css).toMatch(/\.reaction-coaster__label\s*\{[^}]*-webkit-line-clamp:\s*2[^}]*white-space:\s*normal/s);
+  });
+
+  it("gives every warm surface a focus role above the 3:1 non-text threshold", () => {
+    const lightFocus = "#2a1712";
+    const darkFocus = "#f3c95f";
+
+    for (const surface of ["#f7ead2", "#e8694d", "#f3c95f", "#efb6a3"]) {
+      expect(contrastRatio(lightFocus, surface)).toBeGreaterThanOrEqual(3);
+    }
+    for (const surface of ["#2a1712", "#8e2f2d"]) {
+      expect(contrastRatio(darkFocus, surface)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("keeps eyebrow and heading wrappers single-column", () => {
+    expect(css).toMatch(/\.cafe-detail__hero-title\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
+    expect(css).toMatch(/\.suggest-page__heading\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
   });
 
   it("applies a purposeful tactile treatment to invitation actions", () => {
