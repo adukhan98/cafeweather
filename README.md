@@ -137,6 +137,16 @@ npx wrangler deploy --dry-run
 npx wrangler deploy --dry-run --config wrangler.legacy.jsonc
 ```
 
+Deploy the compatibility Worker only after the new hostname is live and its
+page and API paths have been verified:
+
+```bash
+npx wrangler deploy --config wrangler.legacy.jsonc
+```
+
+This order prevents the legacy hostname from sending traffic to an unavailable
+canonical app. Re-run the page redirect and API smoke checks after deployment.
+
 The verified editorial snapshot is public and reviewable; community reactions,
 suggestions, rate limits, and anonymous identity hashes remain private in D1.
 

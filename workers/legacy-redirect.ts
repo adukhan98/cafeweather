@@ -2,15 +2,43 @@ const CANONICAL_ORIGIN = "https://meet-me-there.adnaankhan0901.workers.dev";
 
 type Fetcher = (request: Request) => Promise<Response>;
 
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function rejectedOrigin(request: Request): Response {
+  return Response.json(
+    {
+      error: {
+        code: "origin_rejected",
+        message: "The request origin is not allowed.",
+        requestId: request.headers.get("cf-ray") ?? crypto.randomUUID(),
+      },
+    },
+    { status: 403 },
+  );
+}
+
 export async function handleLegacyRequest(
   request: Request,
   fetcher: Fetcher = (upstream) => fetch(upstream),
 ): Promise<Response> {
   const incomingUrl = new URL(request.url);
-  const canonicalUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, CANONICAL_ORIGIN);
+  const canonicalUrl = new URL(CANONICAL_ORIGIN);
+  canonicalUrl.pathname = incomingUrl.pathname;
+  canonicalUrl.search = incomingUrl.search;
 
   if (!incomingUrl.pathname.startsWith("/api/")) {
     return Response.redirect(canonicalUrl, 308);
+  }
+
+  if (!SAFE_METHODS.has(request.method)) {
+    const suppliedOrigin = request.headers.get("origin");
+    try {
+      if (!suppliedOrigin || new URL(suppliedOrigin).origin !== incomingUrl.origin) {
+        return rejectedOrigin(request);
+      }
+    } catch {
+      return rejectedOrigin(request);
+    }
   }
 
   // Constructing from the incoming Request preserves streaming-body semantics in
