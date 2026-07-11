@@ -11,7 +11,7 @@ import {
   buildCatalogueParams,
   buildRouletteParams,
 } from "./roulette-params";
-import { RouletteDeck } from "./RouletteDeck";
+import { markRerollFocusForNavigation, RouletteDeck } from "./RouletteDeck";
 
 export { buildRouletteParams, initialRouletteSeed } from "./roulette-params";
 
@@ -61,6 +61,7 @@ export function RoulettePage(props: RoulettePageProps) {
     if (rerollLatchRef.current) return;
     rerollLatchRef.current = true;
     setRerollRequested(true);
+    markRerollFocusForNavigation();
     const params = buildRouletteParams(state, freshSeed(), cafe?.id);
     void navigate(pathWithParams("/roulette", params));
   };

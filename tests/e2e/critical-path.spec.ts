@@ -1,14 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { stubMapStyle } from "./map-test-support";
 
 function watchBrowserHealth(page: Page) {
   const failures: string[] = [];
   page.on("console", (message) => {
-    if (
-      message.type() === "error" &&
-      !/AJAXError: Failed to fetch.*tiles\.openfreemap\.org/s.test(message.text())
-    ) {
-      failures.push(`console: ${message.text()}`);
-    }
+    if (message.type() === "error") failures.push(`console: ${message.text()}`);
   });
   page.on("pageerror", (error) => failures.push(`pageerror: ${error.message}`));
   return failures;
@@ -16,6 +12,7 @@ function watchBrowserHealth(page: Page) {
 
 test("discovers a mood, opens a café, and reaches directions", async ({ page }) => {
   const browserFailures = watchBrowserHealth(page);
+  await stubMapStyle(page);
   await page.goto("/");
 
   await expect(
@@ -39,6 +36,7 @@ test("discovers a mood, opens a café, and reaches directions", async ({ page })
 
 test("search, empty recovery, list/map state, and roulette all work", async ({ page }) => {
   const browserFailures = watchBrowserHealth(page);
+  await stubMapStyle(page);
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/cafes");
 
@@ -64,7 +62,8 @@ test("search, empty recovery, list/map state, and roulette all work", async ({ p
   await reroll.click();
   await expect(heading).not.toHaveText(firstPick ?? "");
   await expect(page).toHaveURL(/previousId=/);
-  await expect(reroll).toBeEnabled();
+  const settledReroll = page.getByRole("button", { name: "Reroll" });
+  await expect(settledReroll).toBeFocused();
   expect(browserFailures).toEqual([]);
 });
 

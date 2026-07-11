@@ -37,7 +37,26 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - run: npm run test:e2e
+      - name: Run functional browser suite
+        run: npm run test:e2e -- --grep-invert "visual contract"
 
       - name: Verify Cloudflare upload bundle
         run: npx wrangler deploy --dry-run
+
+  visual:
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.0
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install chromium
+
+      - name: Compare reviewed macOS visual baselines
+        run: npm run test:e2e -- --grep "visual contract"

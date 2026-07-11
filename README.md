@@ -72,6 +72,14 @@ npx wrangler deploy --dry-run
 
 The Playwright suite uses a disposable local community state, a real local D1 binding, Chromium, axe accessibility checks, keyboard interaction, reduced-motion checks, and 320/375/414/768/1280/1440 px geometry coverage.
 
+Visual snapshots are platform-specific. The reviewed baselines are generated on macOS with the repository-pinned Playwright version:
+
+```sh
+npm run test:e2e -- --grep "visual contract" --update-snapshots
+```
+
+CI runs functional browser coverage on Ubuntu without comparing screenshots, then compares the Darwin baselines in a separate `macos-14` job. CI never updates snapshots. This prevents macOS images from being compared against Linux rendering.
+
 ## Cloudflare deployment
 
 The tracked Wrangler config is already connected to Café Weather's canonical

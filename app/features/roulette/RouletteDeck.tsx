@@ -1,6 +1,16 @@
 import type { Cafe } from "../../contracts/cafes";
 import { useEffect, useRef } from "react";
 
+const REROLL_FOCUS_KEY = "meet-me-there:roulette-reroll-focus";
+
+export function markRerollFocusForNavigation() {
+  try {
+    window.sessionStorage.setItem(REROLL_FOCUS_KEY, "pending");
+  } catch {
+    // Focus still falls back to the in-place seed change when storage is unavailable.
+  }
+}
+
 export function displayMatchNumber(seed: string): string {
   let hash = 2166136261;
   for (let index = 0; index < seed.length; index += 1) {
@@ -22,11 +32,26 @@ export function RouletteDeck({ cafe, seed, pending, onReroll }: RouletteDeckProp
   const previousSeedRef = useRef(seed);
 
   useEffect(() => {
-    if (previousSeedRef.current !== seed) {
-      previousSeedRef.current = seed;
-      rerollRef.current?.focus();
+    let navigationRequestedFocus = false;
+    try {
+      navigationRequestedFocus =
+        window.sessionStorage.getItem(REROLL_FOCUS_KEY) === "pending";
+    } catch {
+      // Storage can be unavailable in hardened browsing modes.
     }
-  }, [seed]);
+    const resultChanged = previousSeedRef.current !== seed;
+    if (pending || (!navigationRequestedFocus && !resultChanged)) return;
+
+    previousSeedRef.current = seed;
+    if (navigationRequestedFocus) {
+      try {
+        window.sessionStorage.removeItem(REROLL_FOCUS_KEY);
+      } catch {
+        // The focus action itself does not depend on clearing unavailable storage.
+      }
+    }
+    rerollRef.current?.focus();
+  }, [pending, seed]);
 
   return (
     <div className="roulette-deck" aria-busy={pending}>

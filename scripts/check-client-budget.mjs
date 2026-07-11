@@ -1,9 +1,14 @@
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const assetDirectory = resolve("build/client/assets");
 const limitBytes = 250_000;
-const excludedChunk = /(?:maplibre|cafe[-_.]?map)/i;
+export function isExcludedMapChunk(name) {
+  return name.includes("maplibre") || name.includes("CafeMap");
+}
+
+async function main() {
 
 let entries;
 try {
@@ -11,7 +16,8 @@ try {
 } catch (error) {
   const detail = error instanceof Error ? error.message : String(error);
   console.error(`Client budget failed: cannot read ${assetDirectory}: ${detail}`);
-  process.exit(1);
+  process.exitCode = 1;
+  return;
 }
 
 const javascriptFiles = entries
@@ -21,13 +27,14 @@ const javascriptFiles = entries
 
 if (javascriptFiles.length === 0) {
   console.error(`Client budget failed: no JavaScript assets found in ${assetDirectory}`);
-  process.exit(1);
+  process.exitCode = 1;
+  return;
 }
 
 const measured = [];
 for (const name of javascriptFiles) {
   const { size } = await stat(resolve(assetDirectory, name));
-  measured.push({ name, size, excluded: excludedChunk.test(name) });
+  measured.push({ name, size, excluded: isExcludedMapChunk(name) });
 }
 
 for (const asset of measured) {
@@ -43,9 +50,15 @@ if (failures.length > 0) {
   console.error(
     `Client budget failed: ${failures.length} non-map chunk(s) exceed ${limitBytes} bytes.`,
   );
-  process.exit(1);
+  process.exitCode = 1;
+  return;
 }
 
 console.log(
   `Client budget passed: ${measured.length} JavaScript assets checked; non-map chunks are at most ${limitBytes} bytes.`,
 );
+}
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  await main();
+}

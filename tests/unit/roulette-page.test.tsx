@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { cafes } from "../../app/data/cafes";
 import { CatalogueService } from "../../app/.server/services/catalogue";
@@ -14,6 +14,8 @@ import {
 import { prepareRouletteData } from "../../app/.server/page-data";
 import { parseDiscoveryParams } from "../../app/features/discovery/discovery-params";
 import { displayMatchNumber } from "../../app/features/roulette/RouletteDeck";
+
+afterEach(() => sessionStorage.clear());
 
 function renderPage(url: string, cafe = cafes[0]) {
   const search = new URL(url, "https://cafeweather.test").searchParams;
@@ -225,6 +227,16 @@ describe("RoulettePage", () => {
     expect(container.querySelector(".roulette-result")).not.toBe(firstReveal);
     expect(screen.getByRole("button", { name: "Reroll" })).toBe(control);
     expect(control).toHaveFocus();
+  });
+
+  it("restores reroll focus after navigation remounts the route", () => {
+    sessionStorage.setItem("meet-me-there:roulette-reroll-focus", "pending");
+    const match = cafes.find((cafe) => cafe.slug === "nabulu-coffee-st-joseph")!;
+
+    renderPage("/roulette?mood=cozy&seed=after-navigation", match);
+
+    expect(screen.getByRole("button", { name: "Reroll" })).toHaveFocus();
+    expect(sessionStorage.getItem("meet-me-there:roulette-reroll-focus")).toBeNull();
   });
 
   it("offers clear and browse recovery when no café matches", () => {
