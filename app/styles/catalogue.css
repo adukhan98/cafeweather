@@ -383,4 +383,9 @@
   overflow-wrap: anywhere;
   white-space: normal;
 }
+.catalogue-page .cafe-row .cafe-row__directions,
+.catalogue-page .cafe-row .cafe-row__meet {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
 }

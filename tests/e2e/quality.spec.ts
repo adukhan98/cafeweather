@@ -103,6 +103,20 @@ test("catalogue fieldsets and view radios use the custom control geometry", asyn
       );
     expect(filterWhiteSpace, `filter tabs at ${width}px`).not.toContain("normal");
 
+    const rowActions = await page
+      .locator(".cafe-row__directions, .cafe-row__meet")
+      .evaluateAll((controls) =>
+        controls.map((control) => ({
+          whiteSpace: getComputedStyle(control).whiteSpace,
+          overflowWrap: getComputedStyle(control).overflowWrap,
+        })),
+      );
+    expect(rowActions, `café row actions at ${width}px`).toEqual(
+      expect.arrayContaining([
+        { whiteSpace: "nowrap", overflowWrap: "normal" },
+      ]),
+    );
+
     await page.goto("/cafes?view=map", { waitUntil: "domcontentloaded" });
     const mapIndex = await page.locator(".cafe-map__index button").evaluateAll((controls) =>
       controls.map((control) => ({
