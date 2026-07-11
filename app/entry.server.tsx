@@ -3,6 +3,31 @@ import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 
+const DOCUMENT_CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
+  "img-src 'self' data: blob: https://tiles.openfreemap.org",
+  "connect-src 'self' https://tiles.openfreemap.org https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+].join("; ");
+
+export function applyDocumentSecurityHeaders(headers: Headers): void {
+  headers.set("Content-Security-Policy", DOCUMENT_CONTENT_SECURITY_POLICY);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+}
+
 export function createRenderErrorHandler(
   setResponseStatusCode: (status: number) => void,
   hasRenderedShell: () => boolean,
@@ -42,6 +67,7 @@ export default async function handleRequest(
   }
 
   responseHeaders.set("Content-Type", "text/html");
+  applyDocumentSecurityHeaders(responseHeaders);
   return new Response(body, {
     headers: responseHeaders,
     status: responseStatusCode,

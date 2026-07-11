@@ -41,7 +41,9 @@ jobs:
         run: npm run test:e2e -- --grep-invert "visual contract"
 
       - name: Verify Cloudflare upload bundle
-        run: npx wrangler deploy --dry-run
+        run: |
+          npx wrangler deploy --dry-run
+          npx wrangler deploy --config wrangler.legacy.jsonc --dry-run
 
   visual:
     runs-on: macos-14

@@ -271,6 +271,23 @@ describe("Cafe Weather API handlers", () => {
       reaction: { kind: "cozy", active: false, changed: false, count: 0 },
     });
     expect(communityRepository.reactions).toHaveLength(0);
+    expect(first.headers.get("cache-control")).toBe("private, no-store");
+    expect(second.headers.get("cache-control")).toBe("private, no-store");
+    expect(removed.headers.get("cache-control")).toBe("private, no-store");
+    expect(removedAgain.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("prevents storage of community mutation errors without changing public catalogue caching", async () => {
+    const { request } = createHarness();
+
+    const communityError = await request(
+      "/api/v1/cafes/larrys-place-parkdale/reactions/cozy",
+      { method: "PUT", headers: { origin: "https://evil.example" } },
+    );
+    const catalogue = await request("/api/v1/cafes");
+
+    expect(communityError.headers.get("cache-control")).toBe("private, no-store");
+    expect(catalogue.headers.get("cache-control")).toBeNull();
   });
 
   it("returns all reaction kinds in contract order with private cookie-aware caching", async () => {
@@ -365,6 +382,7 @@ describe("Cafe Weather API handlers", () => {
     });
     expect(body.suggestion.id).not.toBe(submissionId);
     expect(communityRepository.suggestions).toHaveLength(1);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(JSON.stringify(communityRepository.suggestions)).not.toContain(
       submissionId,
     );

@@ -279,6 +279,19 @@ function allowedMethods(path: string): readonly string[] | null {
 
 function withCookie(response: Response, setCookie?: string): Response {
   if (setCookie) response.headers.set("set-cookie", setCookie);
+  response.headers.set("cache-control", "private, no-store");
+  return response;
+}
+
+function isCommunityMutationPath(path: string): boolean {
+  return (
+    path === "/api/v1/suggestions" ||
+    /^\/api\/v1\/cafes\/[^/]+\/reactions\/[^/]+$/u.test(path)
+  );
+}
+
+function preventCommunityMutationStorage(response: Response): Response {
+  response.headers.set("cache-control", "private, no-store");
   return response;
 }
 
@@ -293,10 +306,9 @@ export function createApiHandler(dependencies: ApiDependencies) {
 
   return async function handle(request: Request): Promise<Response> {
     const id = requestId(request);
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/$/u, "") || "/";
     try {
-      const url = new URL(request.url);
-      const path = url.pathname.replace(/\/$/u, "") || "/";
-
       if (path === "/api/v1/facets" && request.method === "GET") {
         const result = await catalogue.facets();
         return Response.json({
@@ -509,11 +521,20 @@ export function createApiHandler(dependencies: ApiDependencies) {
 
       throw new HttpError(404, "route_not_found", "API route not found.");
     } catch (error) {
-      if (error instanceof HttpError) return errorResponse(error, id);
-      return errorResponse(
-        new HttpError(500, "internal_error", "An unexpected error occurred."),
-        id,
-      );
+      const response =
+        error instanceof HttpError
+          ? errorResponse(error, id)
+          : errorResponse(
+              new HttpError(
+                500,
+                "internal_error",
+                "An unexpected error occurred.",
+              ),
+              id,
+            );
+      return isCommunityMutationPath(path)
+        ? preventCommunityMutationStorage(response)
+        : response;
     }
   };
 }

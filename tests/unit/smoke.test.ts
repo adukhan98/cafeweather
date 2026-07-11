@@ -1,6 +1,9 @@
 import * as cafeContract from "../../app/contracts/cafes";
 import { AppShell } from "../../app/components/AppShell";
-import { createRenderErrorHandler } from "../../app/entry.server";
+import {
+  applyDocumentSecurityHeaders,
+  createRenderErrorHandler,
+} from "../../app/entry.server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -43,6 +46,22 @@ describe("Meet Me There scaffold", () => {
     onError(new Error("render failed"));
 
     expect(responseStatusCode).toBe(500);
+  });
+
+  it("applies a document-only security header baseline compatible with maps and Turnstile", () => {
+    const headers = new Headers({ "x-route-header": "preserved" });
+
+    applyDocumentSecurityHeaders(headers);
+
+    expect(headers.get("content-security-policy")).toBe(
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:",
+    );
+    expect(headers.get("x-content-type-options")).toBe("nosniff");
+    expect(headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+    expect(headers.get("permissions-policy")).toBe(
+      "camera=(), microphone=(), geolocation=()",
+    );
+    expect(headers.get("x-route-header")).toBe("preserved");
   });
 
   it("forwards Cloudflare bindings and execution context to React Router", async () => {
